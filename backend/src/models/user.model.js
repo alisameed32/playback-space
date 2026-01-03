@@ -51,14 +51,14 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   const user = this;
-  if (!user.isModified("password")) return next();
+  if (!user.isModified("password")) return;
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(user.password, salt);
   user.password = hashedPassword;
-  next();
+  //next();
 });
 
 userSchema.methods.isPasswordCorect = async function (password) {
