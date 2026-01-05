@@ -5,6 +5,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  refreshAccessToken,
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -24,6 +25,7 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);
+router.route("/refresh-access-token").get(refreshAccessToken);
 
 // secret routes
 
