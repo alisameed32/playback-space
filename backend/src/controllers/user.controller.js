@@ -5,6 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 import { OPTIONS } from "../constants.js";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -425,6 +426,91 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     );
 });
 
+// =======================================
+// Watch History
+// =======================================
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+  /**
+   * =========================================================================
+   * 📝 TECHNICAL NOTE: Why Aggregation Pipeline? (vs .populate)
+   * =========================================================================
+   * I chose an Aggregation Pipeline here because it allows us to process
+   * nested relationships (User -> WatchHistory -> Video -> Owner) in a
+   * SINGLE database query.
+   *
+   * Mongoose .populate() would trigger multiple round-trip queries to the DB
+   * (N+1 problem) and handle the joining in the application server, which
+   * is slower and memory-intensive for large lists like Watch History.
+   *
+   * The sub-pipeline inside $lookup allows us to filter/project the Owner's
+   * details (avatar, username) BEFORE the data leaves the database, saving bandwidth.
+   */
+
+  const user = await User.aggregate([
+    {
+      // stage 1: match user by id
+      $match: {
+        /**
+         * While Mongoose often automatically converts string IDs to ObjectIds behind the scenes for convenience
+         * (e.g., in Model.findById()), this automatic conversion doesn't apply to all operations, especially
+         * when writing aggregation pipelines. In these cases, you need to explicitly tell Mongoose that you
+         * are providing an ObjectId by creating a new instance.
+         */
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    // stage 2: lookup videos in watch history
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        // stage 2.1: lookup owner details for each video (nested lookup: owner details inside watch history videos)
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              // stage 2.1.1: project only necessary owner fields
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          // stage 2.2: add owner field as object instead of array
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0]?.watchHistory,
+        "User watch history fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -436,4 +522,5 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
+  getWatchHistory,
 };
