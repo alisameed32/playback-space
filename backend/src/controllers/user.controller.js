@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteImageOnCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 import { OPTIONS } from "../constants.js";
@@ -295,7 +298,11 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while uploading avatar");
   }
 
-  // TODO: Add logic to delete previous avatar from cloudinary
+  const oldAvatarPublicId = req.user?.avatar;
+
+  if (oldAvatarPublicId) {
+    await deleteImageOnCloudinary(oldAvatarPublicId);
+  }
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
@@ -327,7 +334,11 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while uploading cover image");
   }
 
-  // TODO: Add logic to delete previous cover image from cloudinary
+  const oldCoverImagePublicId = req.user?.coverImage;
+
+  if (oldCoverImagePublicId) {
+    await deleteImageOnCloudinary(oldCoverImagePublicId);
+  }
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
