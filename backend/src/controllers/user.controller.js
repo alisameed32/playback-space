@@ -3,7 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
 import {
   uploadOnCloudinary,
-  deleteImageOnCloudinary,
+  deleteOnCloudinary,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
@@ -301,7 +301,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const oldAvatarPublicId = req.user?.avatar;
 
   if (oldAvatarPublicId) {
-    await deleteImageOnCloudinary(oldAvatarPublicId);
+    await deleteOnCloudinary(oldAvatarPublicId);
   }
 
   const user = await User.findByIdAndUpdate(
@@ -337,7 +337,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const oldCoverImagePublicId = req.user?.coverImage;
 
   if (oldCoverImagePublicId) {
-    await deleteImageOnCloudinary(oldCoverImagePublicId);
+    await deleteOnCloudinary(oldCoverImagePublicId);
   }
 
   const user = await User.findByIdAndUpdate(

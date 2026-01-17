@@ -25,8 +25,8 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-// Function to delete an image by its public ID
-const deleteImageOnCloudinary = async (imageUrl) => {
+// Function to delete an by its public ID
+const deleteOnCloudinary = async (imageUrl) => {
   try {
     if (!imageUrl) return null;
     // Extract public ID from the URL

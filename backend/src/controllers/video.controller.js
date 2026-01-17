@@ -4,164 +4,297 @@ import User from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { use } from "react";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
+// ===================================================
+// Controller Functions for Video
+// ===================================================
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
 
-  /**
-   * ============================================================================
-   * 🎯 CONTROLLER LOGIC BLUEPRINT: getAllVideos
-   * ============================================================================
-   *
-   * GOAL: Retrieve videos based on a complex "Feed Algorithm" that handles both
-   * search, filtering, and a custom "Mix" recommendation engine.
-   *
-   * 1. INITIALIZATION
-   * - Extract parameters: page, limit, query, sortBy, sortType, userId.
-   * - Start an empty Aggregation Pipeline.
-   *
-   * 2. SEARCH & DISCOVERY (The "Search Layer")
-   * - IF 'query' is provided:
-   * a. Perform a $lookup on the 'users' collection (Join First Strategy).
-   * - Reason: We must search by Channel Name, not just Video Title.
-   * b. Match documents where 'query' exists in:
-   * - Video Title (Regex)
-   * - Video Description (Regex)
-   * - Channel Full Name (from the lookup)
-   * - ELSE (Default Feed):
-   * a. Apply a "Recency Filter" (e.g., limit to videos from the last 2-3 years)
-   * to ensure the feed feels fresh.
-   *
-   * 3. FILTERING (The "Type Layer")
-   * - IF 'userId' is provided -> Filter by specific channel owner.
-   * - IF 'type' is provided (Video/Channel/Playlist) -> Apply conditional logic
-   * (Note: Primarily focuses on 'Video' type for this controller).
-   * - ALWAYS filter for isPublished: true (unless admin).
-   *
-   * 4. SORTING & RANKING (The "Mix Layer")
-   * - Calculate 'Rating' dynamically (requires looking up 'likes' collection).
-   * - Determine Sort Order:
-   * a. IF 'sortBy' is explicit (View Count, Date, Rating) -> Sort by that field.
-   * b. IF 'sortBy' is EMPTY -> Apply "Smart Mix" Logic:
-   * - Combine Recency, High Views, and High Ratings into a weighted score.
-   * - Apply a randomization factor to keep the feed interesting.
-   *
-   * 5. PAGINATION
-   * - Pass the final pipeline to Aggregate Paginate.
-   * - Return the result to the frontend.
-   * ============================================================================
-   */
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
 
-  const pipeline = [];
+  const matchStage = {};
 
-  if (!query && !userId && !sortBy && !sortType) {
-    // Default Feed Logic
-    const threeYearsAgo = new Date();
-    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-
-    pipeline.push(
-      {
-        $match: {
-          isPublished: true,
-          createdAt: { $gte: threeYearsAgo },
-        },
-      },
-      {
-        // Random score per request
-        $addFields: {
-          randomScore: { $rand: {} },
-        },
-      },
-      {
-        $sort: {
-          randomScore: -1,
-          createdAt: -1, // tie-breaker
-        },
-      }
-    );
-  }
-
+  // Search by title or description
   if (query) {
-    // Search Logic
-    pipeline.push(
-      // 1. LOOKUP: Fetch Channel + Subscriber Count
-      {
-        $lookup: {
-          from: "users",
-          localField: "owner",
-          foreignField: "_id",
-          as: "channelsDetails",
-          pipeline: [
-            // A. Get Subscriber Count (Nested Lookup)
-            {
-              $lookup: {
-                from: "subscriptions",
-                localField: "_id",
-                foreignField: "channel",
-                as: "subscribers",
-              },
-            },
-            // B. Calculate Count
-            {
-              $addFields: {
-                subscriberCount: { $size: "$subscribers" },
-              },
-            },
-            // C. Clean up (Project only what we need)
-            {
-              $project: {
-                fullName: 1,
-                username: 1,
-                avatar: 1,
-                subscriberCount: 1,
-              },
-            },
-          ],
-        },
-      },
-      // 2. UNWIND: Flatten the array so we can search it
-      {
-        $unwind: "$channelsDetails",
-      },
-      // 3. GLOBAL MATCH: Search Title OR Description OR Channel Name
-      {
-        $match: {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { description: { $regex: query, $options: "i" } },
-            { "channelsDetails.fullName": { $regex: query, $options: "i" } }, // <--- Channel Search works here!
-          ],
-        },
-      }
-    );
+    matchStage.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
   }
+
+  // Filter by userId (owner)
+  if (userId) {
+    if (!mongoose.isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid User ID");
+    }
+    matchStage.owner = new mongoose.Types.ObjectId(userId);
+  }
+
+  matchStage.isPublished = true;
+
+  const sortStage = {};
+  sortStage[sortBy] = sortType === "asc" ? 1 : -1;
+
+  // Aggregation Pipeline
+  const videos = await Video.aggregate([
+    // Stage 1: Match
+    { $match: matchStage },
+
+    // Stage 2: Lookup to join with User collection
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+
+    // Stage 3: Unwind the ownerDetails array
+    {
+      $unwind: "$ownerDetails",
+    },
+
+    // Stage 4: Sort
+    { $sort: sortStage },
+
+    // Stage 5: Facet for pagination
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: skip }, { $limit: limitNumber }],
+      },
+    },
+  ]);
+
+  const result = videos[0];
+  const totalDocs = result.metadata[0] ? result.metadata[0].total : 0;
+  const videoData = result.data;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        videos: videoData,
+        pagination: {
+          total: totalDocs,
+          page: pageNumber,
+          limit: limitNumber,
+          totalPages: Math.ceil(totalDocs / limitNumber),
+        },
+      },
+      "Videos fetched successfully"
+    )
+  );
 });
 
+// ===================================================
+// Publish a New Video
+// ===================================================
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  // TODO: get video, upload to cloudinary, create video
+
+  if (!title) {
+    throw new ApiError(400, "Video title is required");
+  }
+
+  if (!req.files.videoFile && !req.files.thumbnail) {
+    throw new ApiError(400, "Video file and thumbnail are required");
+  }
+
+  const localVideoPath = req.files?.videoFile?.[0]?.path;
+  const localThumbnailPath = req.files?.thumbnail?.[0]?.path;
+
+  const videoFile = await uploadOnCloudinary(localVideoPath);
+  const thumbnail = await uploadOnCloudinary(localThumbnailPath);
+
+  if (!videoFile) {
+    throw new ApiError(500, "Video upload failed");
+  }
+
+  const newVideo = await Video.create({
+    videoFile: videoFile.secure_url,
+    thumbnail: thumbnail ? thumbnail.secure_url : "",
+    owner: req.user._id,
+    title,
+    description,
+    duration: videoFile.duration || 0,
+    isPublished: true,
+  });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newVideo, "Video published successfully"));
 });
 
+// ===================================================
+// Get Video by ID
+// ===================================================
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: get video by id
+
+  const video = await Video.findById(videoId).populate(
+    "owner",
+    "username fullName avatar"
+  );
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video fetched successfully"));
 });
 
+// ===================================================
+// Update Video Details
+// ===================================================
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  //TODO: update video details like title, description, thumbnail
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  if (!req.user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+  const video = await Video.findById(videoId);
+  const oldThumbnailUrl = video.thumbnail;
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  if (video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not the owner of this video");
+  }
+
+  const { title, description } = req.body;
+
+  if (title) video.title = title;
+  if (description) video.description = description;
+
+  const localThumbnailPath = req.file?.path;
+
+  if (localThumbnailPath) {
+    const thumbnail = await uploadOnCloudinary(localThumbnailPath);
+    if (thumbnail) {
+      video.thumbnail = thumbnail.secure_url;
+    }
+  }
+
+  if (oldThumbnailUrl && oldThumbnailUrl !== video.thumbnail) {
+    await deleteFromCloudinary(oldThumbnailUrl);
+  }
+
+  await video.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video updated successfully"));
 });
 
+// ===================================================
+// Delete Video
+// ===================================================
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  //TODO: delete video
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  if (!req.user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const video = await Video.findById(videoId);
+  const oldThumbnailUrl = video.thumbnail;
+  const oldVideoUrl = video.videoFile;
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  if (video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not the owner of this video");
+  }
+
+  const deletedVideo = await Video.deleteOne({ _id: videoId });
+
+  if (result.deletedCount > 0) {
+    // Now it is safe to delete files
+    if (oldThumbnailUrl) await deleteFromCloudinary(oldThumbnailUrl);
+    if (oldVideoUrl) await deleteFromCloudinary(oldVideoUrl);
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, deletedVideo, "Video deleted successfully"));
 });
 
+// ===================================================
+// Toggle Publish Status
+// ===================================================
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  if (!req.user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  if (video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not the owner of this video");
+  }
+
+  video.isPublished = !video.isPublished;
+  await video.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        video,
+        `Video has been ${video.isPublished ? "published" : "unpublished"}`
+      )
+    );
 });
 
 export {
