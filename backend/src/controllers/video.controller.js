@@ -1,13 +1,10 @@
 import mongoose, { isValidObjectId } from "mongoose";
-import Video from "../models/video.model.js";
-import User from "../models/user.model.js";
+import { Video } from "../models/video.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import {
-  uploadOnCloudinary,
-  deleteFromCloudinary,
-} from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 
 // ===================================================
 // Controller Functions for Video
@@ -57,7 +54,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     // Stage 2: Lookup to join with User collection
     {
       $lookup: {
-        from: "users",
+        from: "User",
         localField: "owner",
         foreignField: "_id",
         as: "ownerDetails",
@@ -75,7 +72,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     // Stage 3: Unwind the ownerDetails array
     {
-      $unwind: "$ownerDetails",
+      $unwind: {
+        path: "$ownerDetails", // The field to unwind
+        preserveNullAndEmptyArrays: true, // Now it's a valid option inside $unwind
+      },
     },
 
     // Stage 4: Sort
@@ -210,7 +210,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 
   if (oldThumbnailUrl && oldThumbnailUrl !== video.thumbnail) {
-    await deleteFromCloudinary(oldThumbnailUrl);
+    await deleteOnCloudinary(oldThumbnailUrl, "image");
   }
 
   await video.save();
@@ -248,10 +248,10 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   const deletedVideo = await Video.deleteOne({ _id: videoId });
 
-  if (result.deletedCount > 0) {
+  if (deletedVideo.deletedCount > 0) {
     // Now it is safe to delete files
-    if (oldThumbnailUrl) await deleteFromCloudinary(oldThumbnailUrl);
-    if (oldVideoUrl) await deleteFromCloudinary(oldVideoUrl);
+    if (oldThumbnailUrl) await deleteOnCloudinary(oldThumbnailUrl, "image");
+    if (oldVideoUrl) await deleteOnCloudinary(oldVideoUrl, "video");
   }
 
   return res

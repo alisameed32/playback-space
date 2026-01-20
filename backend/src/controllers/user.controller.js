@@ -301,7 +301,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const oldAvatarPublicId = req.user?.avatar;
 
   if (oldAvatarPublicId) {
-    await deleteOnCloudinary(oldAvatarPublicId);
+    await deleteOnCloudinary(oldAvatarPublicId, "image");
   }
 
   const user = await User.findByIdAndUpdate(
@@ -337,7 +337,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const oldCoverImagePublicId = req.user?.coverImage;
 
   if (oldCoverImagePublicId) {
-    await deleteOnCloudinary(oldCoverImagePublicId);
+    await deleteOnCloudinary(oldCoverImagePublicId, "image");
   }
 
   const user = await User.findByIdAndUpdate(

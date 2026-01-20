@@ -26,13 +26,13 @@ const uploadOnCloudinary = async (localFilePath) => {
 };
 
 // Function to delete an by its public ID
-const deleteOnCloudinary = async (imageUrl) => {
+const deleteOnCloudinary = async (assetUrl, resourceType = "image" ) => {
   try {
-    if (!imageUrl) return null;
+    if (!assetUrl) return null;
     // Extract public ID from the URL
-    const publicId = imageUrl.split("/").pop().split(".")[0];
-
+    const publicId = assetUrl.split("/").pop().split(".")[0];
     const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
       invalidate: true, // Set to true to purge CDN cache
     });
     console.log(result);
@@ -43,4 +43,4 @@ const deleteOnCloudinary = async (imageUrl) => {
   }
 };
 
-export { uploadOnCloudinary, deleteImageOnCloudinary };
+export { uploadOnCloudinary, deleteOnCloudinary };
