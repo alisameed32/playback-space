@@ -77,3 +77,139 @@ export const verifyTweetOwnership = async (tweetId, userId) => {
 
   return tweet;
 };
+
+/**
+ * Verifies comment ownership
+ * @throws {ApiError} 400 if invalid ID format
+ * @throws {ApiError} 404 if comment not found
+ * @throws {ApiError} 403 if user doesn't own comment
+ */
+
+export const verifyCommentOwnership = async (commentId, userId, Comment) => {
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Invalid Comment ID");
+  }
+
+  const comment = await Comment.findById(commentId);
+
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  if (comment.owner.toString() !== userId.toString()) {
+    throw new ApiError(403, "You are not the owner of this comment");
+  }
+
+  return comment;
+};
+
+/**
+ * Helper function to add comment to either video or tweet
+ * @throws {ApiError} 400 if both or neither videoId and tweetId are provided
+ * @throws {ApiError} 404 if video or tweet not found
+ * @throws {ApiError} 500 if comment creation fails
+ */
+export const addCommentToEntity = async ({
+  entityId,
+  userId,
+  EntityModel,
+  content,
+  CommentModel,
+  entityKey, // Explicitly tell the DB which field to populate (e.g., "video", "tweet")
+}) => {
+  if (!content || content.trim() === "") {
+    throw new ApiError(400, "Comment content is required");
+  }
+
+  if (!isValidObjectId(entityId)) {
+    throw new ApiError(400, "Invalid Entity ID");
+  }
+
+  const entity = await EntityModel.findById(entityId);
+
+  if (!entity) {
+    throw new ApiError(404, "Target entity (Video/Tweet) not found");
+  }
+
+  const newComment = await CommentModel.create({
+    content,
+    owner: userId,
+    [entityKey]: entityId,
+  });
+
+  if (!newComment) {
+    throw new ApiError(500, "Failed to create comment");
+  }
+
+  await newComment.save();
+
+  return newComment;
+};
+
+/**
+ * Helper function to get comments for either video or tweet
+ * @throws {ApiError} 400 if invalid ID format
+ * @throws {ApiError} 404 if video or tweet not found
+ */
+export const getCommentsForEntity = async ({
+  entityId,
+  page,
+  limit,
+  entityKey,
+  CommentModel,
+}) => {
+  if (!isValidObjectId(entityId)) {
+    throw new ApiError(400, "Invalid Video ID");
+  }
+
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const commentsAggregate = await CommentModel.aggregate([
+    {
+      $match: { [entityKey]: new mongoose.Types.ObjectId(entityId) },
+    },
+    {
+      // $facet allows running multiple pipelines in parallel
+      $facet: {
+        // Pipeline 1: Get the Total Count
+        metadata: [{ $count: "totalDocs" }],
+
+        // Pipeline 2: Get the Data (Pagination first, then Lookup)
+        data: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limitNumber },
+          {
+            $lookup: {
+              from: "User",
+              localField: "owner",
+              foreignField: "_id",
+              as: "ownerDetails",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          { $unwind: "$ownerDetails" },
+        ],
+      },
+    },
+  ]);
+
+  const result = commentsAggregate[0];
+  const comments = result.data;
+  const totalDocs = result.metadata[0] ? result.metadata[0].totalDocs : 0;
+
+  // 3. Fix: Calculate pagination HERE, since we have limitNumber here
+  const totalPages = Math.ceil(totalDocs / limitNumber);
+
+  // Return everything the controller needs
+  return { comments, totalDocs, totalPages, currentPage: pageNumber };
+};
