@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   verifyPlaylistOwnership,
   verifyVideoExists,
-} from "../utils/playlistHelpers.js";
+} from "../utils/validation.js";
 
 // =================================
 // Playlist Controllers

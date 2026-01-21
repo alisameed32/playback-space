@@ -2,6 +2,7 @@ import { Video } from "../models/video.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { isValidObjectId } from "mongoose";
 import { ApiError } from "./apiError.js";
+import { Tweet } from "../models/tweet.model.js";
 
 /**
  * Finds playlist and verifies user owns it
@@ -46,4 +47,33 @@ export const verifyVideoExists = async (videoId) => {
   }
 
   return video;
+};
+
+/**
+ *
+ * Verifies tweet ownership
+ * @throws {ApiError} 400 if invalid ID format
+ * @throws {ApiError} 404 if tweet not found
+ * @throws {ApiError} 403 if user doesn't own tweet
+ */
+export const verifyTweetOwnership = async (tweetId, userId) => {
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Invalid tweet ID");
+  }
+
+  if (!tweetId) {
+    throw new ApiError(400, "Tweet ID is required");
+  }
+
+  const tweet = await Tweet.findById(tweetId);
+
+  if (!tweet) {
+    throw new ApiError(404, "Tweet not found");
+  }
+
+  if (tweet.owner.toString() !== userId.toString()) {
+    throw new ApiError(403, "Forbidden: You do not own this tweet");
+  }
+
+  return tweet;
 };
