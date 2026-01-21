@@ -3,13 +3,16 @@ import { Playlist } from "../models/playlist.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { verifyPlaylistOwnership, verifyVideoExists } from "../utils/playlistHelpers.js";
+import {
+  verifyPlaylistOwnership,
+  verifyVideoExists,
+} from "../utils/playlistHelpers.js";
 
 // =================================
 // Playlist Controllers
 // =================================
 const createPlaylist = asyncHandler(async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, isPublic = true } = req.body;
 
   if (!name || name.trim() === "") {
     throw new ApiError(400, "Playlist name is required");
@@ -19,6 +22,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     name,
     description,
     owner: req.user._id,
+    isPublic: isPublic,
   });
 
   return res
@@ -91,6 +95,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
         name: 1,
         description: 1,
         totalVideos: 1,
+        isPublic: 1,
         playlistThumbnail: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -341,6 +346,28 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Playlist updated successfully", playlist));
 });
 
+// ===================================================
+// Toggle Public Status
+// ===================================================
+const togglePublicStatus = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+
+  const playlist = await verifyPlaylistOwnership(playlistId, req.user._id);
+
+  playlist.isPublic = !playlist.isPublic;
+  await playlist.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        playlist,
+        `Playlist has been ${playlist.isPublic ? "made public" : "made private"}`
+      )
+    );
+});
+
 export {
   createPlaylist,
   getUserPlaylists,
@@ -349,4 +376,5 @@ export {
   removeVideoFromPlaylist,
   deletePlaylist,
   updatePlaylist,
+  togglePublicStatus,
 };
