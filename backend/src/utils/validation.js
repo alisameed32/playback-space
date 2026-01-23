@@ -3,7 +3,7 @@ import { Playlist } from "../models/playlist.model.js";
 import { isValidObjectId } from "mongoose";
 import { ApiError } from "./apiError.js";
 import { Tweet } from "../models/tweet.model.js";
-
+import mongoose from "mongoose";
 /**
  * Finds playlist and verifies user owns it
  * @throws {ApiError} 404 if playlist not found

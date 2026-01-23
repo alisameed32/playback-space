@@ -3,13 +3,13 @@ import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-
+import { Video } from "../models/video.model.js";
+import { Tweet } from "../models/tweet.model.js";
 import {
   verifyCommentOwnership,
   addCommentToEntity,
   getCommentsForEntity,
 } from "../utils/validation.js";
-import { Tweet } from "../models/tweet.model.js";
 
 // =============================
 // Get comments for a video
@@ -18,7 +18,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { page = 1, limit = 10 } = req.query;
 
-  const commentsAggregate = await getCommentsForEntity({
+  const comments = await getCommentsForEntity({
     entityId: videoId,
     page,
     limit,
@@ -26,32 +26,20 @@ const getVideoComments = asyncHandler(async (req, res) => {
     CommentModel: Comment,
   });
 
-  const result = commentsAggregate[0];
-  const comments = result.data;
-  const totalDocs = result.metadata[0] ? result.metadata[0].totalDocs : 0;
-
-  const totalPages = Math.ceil(totalDocs / limitNumber);
-
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { comments, totalDocs, totalPages, currentPage: pageNumber },
-        "Comments fetched successfully"
-      )
-    );
+    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
 });
 
 // =============================
 // Get comments for a tweet
 // =============================
 const getTweetComments = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  const { tweetId } = req.params;
   const { page = 1, limit = 10 } = req.query;
 
   const comments = await getCommentsForEntity({
-    entityId: videoId,
+    entityId: tweetId,
     page,
     limit,
     entityKey: "tweet",
@@ -109,15 +97,13 @@ const addTweetComment = asyncHandler(async (req, res) => {
 // Update a comment
 // =============================
 const updateComment = asyncHandler(async (req, res) => {
-  // TODO: update a comment
-
   const { content } = req.body;
 
   if (!content || content.trim() === "") {
     throw new ApiError(400, "Comment content is required");
   }
 
-  const comment = verifyCommentOwnership(
+  const comment = await verifyCommentOwnership(
     req.params.commentId,
     req.user._id,
     Comment
@@ -131,6 +117,9 @@ const updateComment = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, comment, "Comment updated successfully"));
 });
 
+// =============================
+// Delete a comment
+// =============================
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const comment = await verifyCommentOwnership(
@@ -139,7 +128,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     Comment
   );
 
-  await comment.remove();
+  await comment.deleteOne();
 
   return res
     .status(200)
@@ -148,6 +137,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 export {
   getVideoComments,
+  getTweetComments,
   addVideoComment,
   addTweetComment,
   updateComment,
