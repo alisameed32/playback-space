@@ -97,9 +97,11 @@ const getLikedVideos = asyncHandler(async (req, res) => {
           },
           // Unwind ownerDetails within the video lookup
           {
-            $unwind: "$ownerDetails",
-            preserveNullAndEmptyArrays: true
-          }
+            $unwind: {
+              path: "$ownerDetails",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
         ],
       },
     },
@@ -131,8 +133,8 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     {
       $unwind: {
         path: "$metadata",
-        preserveNullAndEmptyArrays: true
-      }
+        preserveNullAndEmptyArrays: true,
+      },
     },
   ]);
 
