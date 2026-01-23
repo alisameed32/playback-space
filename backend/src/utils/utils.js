@@ -3,6 +3,7 @@ import { Playlist } from "../models/playlist.model.js";
 import { isValidObjectId } from "mongoose";
 import { ApiError } from "./apiError.js";
 import { Tweet } from "../models/tweet.model.js";
+import { Like } from "../models/like.model.js";
 import mongoose from "mongoose";
 /**
  * Finds playlist and verifies user owns it
@@ -212,4 +213,44 @@ export const getCommentsForEntity = async ({
 
   // Return everything the controller needs
   return { comments, totalDocs, totalPages, currentPage: pageNumber };
+};
+
+/**
+ * Helper function to toggle like on either video, comment, or tweet
+ * @throws {ApiError} 400 if both or neither videoId, commentId, tweetId are provided
+ * @throws {ApiError} 404 if target entity not found
+ */
+
+export const toggleLikeOnEntity = async ({
+  entityId,
+  entityName,
+  userId,
+  entityKey, // Explicitly tell the DB which field to populate (e.g., "video", "comment", "tweet")
+}) => {
+  if (!entityId) {
+    throw new ApiError(400, `${entityName} ID is required`);
+  }
+
+  if (!isValidObjectId(entityId)) {
+    throw new ApiError(400, `Invalid ${entityName} ID`);
+  }
+
+  const isLiked = await Like.findOne({
+    [entityKey]: entityId,
+    likedBy: userId,
+  });
+
+  if (!isLiked) {
+    const newLike = await Like.create({
+      [entityKey]: entityId,
+      likedBy: userId,
+    });
+    await newLike.save();
+
+    return { message: `${entityName} like toggled successfully` };
+  } else {
+    await Like.deleteOne({ _id: isLiked._id });
+
+    return { message: `${entityName} unlike toggled successfully` };
+  }
 };

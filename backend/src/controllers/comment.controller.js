@@ -9,7 +9,7 @@ import {
   verifyCommentOwnership,
   addCommentToEntity,
   getCommentsForEntity,
-} from "../utils/validation.js";
+} from "../utils/utils.js";
 
 // =============================
 // Get comments for a video
@@ -135,7 +135,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Comment deleted successfully"));
 });
 
-// TODO: Add comment replies feature (Future Enhancement)
+// TODO: Add comment replies feature (Future)
 
 export {
   getVideoComments,
