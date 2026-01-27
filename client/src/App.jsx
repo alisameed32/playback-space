@@ -14,6 +14,7 @@ import Tweets from './pages/Tweets'
 import LikedVideos from './pages/LikedVideos'
 import Subscriptions from './pages/Subscriptions'
 import Settings from './pages/Settings'
+import ForgotPassword from './pages/ForgotPassword'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Container from './components/Container'
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <Auth />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
   },
 ])
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
@@ -226,7 +226,7 @@ function Auth() {
                              {...loginForm.register("password", { required: "Password is required" })}
                         />
                         <div className='flex justify-end'>
-                            <button type="button" className='text-sm text-purple-400 hover:text-purple-300'>Forgot password?</button>
+                            <Link to="/forgot-password" className='text-sm text-purple-400 hover:text-purple-300'>Forgot password?</Link>
                         </div>
                         <Button type="submit" className="w-full h-11" disabled={isLoading}>
                             {isLoading ? "Signing in..." : "Sign In"}

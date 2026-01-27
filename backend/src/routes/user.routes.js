@@ -14,11 +14,18 @@ import {
   getUserChannelProfile,
   getWatchHistory,
   deleteUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 } from "../controllers/user.controller.js";
 
 const router = Router();
 
 // ================ public routes ================
+
+router.route("/forgot-password").post(forgotPassword);
+router.route("/verify-otp").post(verifyOtp);
+router.route("/reset-password").post(resetPassword);
 
 router.route("/register").post(
   upload.fields([

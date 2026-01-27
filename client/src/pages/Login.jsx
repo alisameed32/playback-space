@@ -88,6 +88,11 @@ function Login() {
                                 required: true,
                             })}
                         />
+                         <div className="flex justify-end">
+                            <Link to="/forgot-password" className="text-sm text-gray-400 hover:text-purple-500 transition-colors">
+                                Forgot password?
+                            </Link>
+                        </div>
                         <Button
                             type="submit"
                             className="w-full"
