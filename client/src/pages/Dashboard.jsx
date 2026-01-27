@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Loader2, Eye, Heart, Users, Video, Plus, X, Upload } from 'lucide-react';
+import { Loader2, Eye, Heart, Users, Video, Plus, X, Upload, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import VideoCard from '../components/VideoCard';
 import Button from '../components/Button';
@@ -20,6 +20,15 @@ function Dashboard() {
         videoFile: null,
         thumbnailFile: null
     });
+
+    // Edit State
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editVideo, setEditVideo] = useState(null);
+    const [updating, setUpdating] = useState(false);
+
+    // Delete State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [videoToDelete, setVideoToDelete] = useState(null);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -112,6 +121,80 @@ function Dashboard() {
         { label: "Total Videos", value: stats.totalVideos || 0, icon: Video, color: "text-green-400" },
     ];
 
+    const handleDeleteClick = (videoId) => {
+        setVideoToDelete(videoId);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!videoToDelete) return;
+        
+        const toastId = toast.loading("Deleting video...");
+        try {
+            await axios.delete(`/api/v1/videos/${videoToDelete}`);
+            toast.success("Video deleted successfully", { id: toastId });
+            setVideos(prev => prev.filter(v => v._id !== videoToDelete));
+            // Update stats locally
+            setStats(prev => ({ ...prev, totalVideos: Math.max(0, (prev.totalVideos || 0) - 1) }));
+        } catch (error) {
+             toast.error("Failed to delete video", { id: toastId });
+        } finally {
+            setShowDeleteModal(false);
+            setVideoToDelete(null);
+        }
+    };
+
+    const openEditModal = (video) => {
+        setEditVideo({
+            _id: video._id,
+            title: video.title,
+            description: video.description,
+            thumbnail: video.thumbnail,
+            isPublished: video.isPublished,
+            originalIsPublished: video.isPublished, // Store original state to compare
+            thumbnailFile: null
+        });
+        setShowEditModal(true);
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        if (!editVideo.title) return toast.error("Title is required");
+
+        setUpdating(true);
+        const toastId = toast.loading("Updating video...");
+
+        const formData = new FormData();
+        formData.append("title", editVideo.title);
+        formData.append("description", editVideo.description);
+        if (editVideo.thumbnailFile) {
+            formData.append("thumbnail", editVideo.thumbnailFile);
+        }
+
+        try {
+            await axios.patch(`/api/v1/videos/${editVideo._id}`, formData, {
+                 headers: { "Content-Type": "multipart/form-data" }
+            });
+            
+            // Handle Publish Status Toggle
+            if (editVideo.isPublished !== editVideo.originalIsPublished) {
+                await axios.patch(`/api/v1/videos/toggle/publish/${editVideo._id}`);
+            }
+
+            toast.success("Video updated successfully", { id: toastId });
+            setShowEditModal(false);
+            setEditVideo(null);
+            
+            // Refresh videos
+            fetchDashboardData(); 
+
+        } catch (error) {
+            toast.error("Failed to update video", { id: toastId });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     if (loading) {
          return (
             <div className="w-full h-[80vh] flex items-center justify-center">
@@ -174,6 +257,22 @@ function Dashboard() {
                                     } 
                                 }} 
                               />
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditModal(video); }} 
+                                        className="p-2 bg-gray-900/90 rounded-full text-white hover:text-blue-400 hover:bg-black transition-colors"
+                                        title="Edit Video"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteClick(video._id); }} 
+                                        className="p-2 bg-gray-900/90 rounded-full text-white hover:text-red-400 hover:bg-black transition-colors"
+                                        title="Delete Video"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
                          </div>
                      ))}
                  </div>
@@ -262,6 +361,126 @@ function Dashboard() {
                                 </Button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {showEditModal && editVideo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                        <button 
+                            onClick={() => !updating && setShowEditModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white disabled:opacity-50"
+                            disabled={updating}
+                        >
+                            <X size={24} />
+                        </button>
+                        
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Pencil size={24} className="text-blue-500" />
+                            Edit Video
+                        </h2>
+
+                        <form onSubmit={handleUpdate} className="space-y-4">
+                            {/* Thumbnail Input */}
+                            <div>
+                                <label className="text-sm text-gray-400 mb-1 block">New Thumbnail (Optional)</label>
+                                <div className="flex items-center gap-4 mb-2">
+                                    {(editVideo.thumbnailFile || editVideo.thumbnail) && (
+                                        <img 
+                                          src={editVideo.thumbnailFile ? URL.createObjectURL(editVideo.thumbnailFile) : editVideo.thumbnail} 
+                                          alt="Preview" 
+                                          className="w-32 h-20 object-cover rounded-md border border-gray-700" 
+                                        />
+                                    )}
+                                </div>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700"
+                                    onChange={(e) => setEditVideo({ ...editVideo, thumbnailFile: e.target.files[0] })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-gray-400 mb-1 block">Title</label>
+                                <Input 
+                                    placeholder="Video title"
+                                    value={editVideo.title}
+                                    onChange={(e) => setEditVideo({...editVideo, title: e.target.value})}
+                                    className="bg-gray-800 border-gray-700"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="text-sm text-gray-400 mb-1 block">Description</label>
+                                <textarea
+                                    placeholder="Video description"
+                                    value={editVideo.description}
+                                    onChange={(e) => setEditVideo({...editVideo, description: e.target.value})}
+                                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white min-h-[100px] resize-none"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer"
+                                        checked={editVideo.isPublished}
+                                        onChange={(e) => setEditVideo({...editVideo, isPublished: e.target.checked})}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    <span className="ml-3 text-sm font-medium text-gray-300">
+                                        {editVideo.isPublished ? 'Public' : 'Private'}
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={updating}>
+                                    {updating ? (
+                                        <span className="flex items-center gap-2">
+                                            <Loader2 className="animate-spin" size={20} /> Updating...
+                                        </span>
+                                    ) : (
+                                        "Save Changes"
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative transform transition-all scale-100">
+                        <div className="text-center">
+                            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                                <Trash2 className="text-red-500" size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2">Delete Video?</h3>
+                            <p className="text-gray-400 mb-6">
+                                Are you sure you want to delete this video? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <Button 
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    onClick={confirmDelete}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

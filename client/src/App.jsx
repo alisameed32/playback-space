@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard'
 import UserProfile from './pages/UserProfile'
 import PlaylistDetail from './pages/PlaylistDetail'
 import WatchVideo from './pages/WatchVideo'
+import History from './pages/History'
+import Tweets from './pages/Tweets'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Container from './components/Container'
@@ -79,7 +81,8 @@ const router = createBrowserRouter([
       },
       // Placeholder for other sidebar links to avoid 404
       { path: "/liked-videos", element: <div className='pt-20 text-center'>Liked Videos Coming Soon</div> },
-      { path: "/history", element: <div className='pt-20 text-center'>History Coming Soon</div> },
+      { path: "/history", element: <History /> },
+      { path: "/tweets", element: <Tweets /> },
       { path: "/subscriptions", element: <div className='pt-20 text-center'>Subscriptions Coming Soon</div> },
       { path: "/settings", element: <div className='pt-20 text-center'>Settings Coming Soon</div> },
     ]

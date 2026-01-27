@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ThumbsUp, Share2, MessageCircle, UserPlus, UserCheck, Send, MoreVertical } from 'lucide-react';
+import { ThumbsUp, Share2, MessageCircle, UserPlus, UserCheck, Send, MoreVertical, ListPlus, X, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import VideoCard from '../components/VideoCard';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import ShareModal from '../components/ShareModal';
 
 function WatchVideo() {
     const { videoId } = useParams();
@@ -16,6 +17,22 @@ function WatchVideo() {
     const [loading, setLoading] = useState(true);
     const [channelStats, setChannelStats] = useState({ subscribersCount: 0, isSubscribed: false });
     const [likeState, setLikeState] = useState({ isLiked: false, likesCount: 0 });
+
+    // Playlist State
+    const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+    const [userPlaylists, setUserPlaylists] = useState([]);
+    const [loadingPlaylists, setLoadingPlaylists] = useState(false);
+    const [newPlaylistName, setNewPlaylistName] = useState("");
+    const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
+    // Share Modal
+    const [showShareModal, setShowShareModal] = useState(false);
+
+    // Get current user from local storage
+    const userString = localStorage.getItem("user");
+    const currentUser = userString && userString !== "undefined" ? JSON.parse(userString) : null;
+    const currentUserAvatar = currentUser?.avatar || "https://placehold.co/40";
+
 
     useEffect(() => {
         const fetchVideoData = async () => {
@@ -89,6 +106,52 @@ function WatchVideo() {
         }
     };
 
+    const fetchUserPlaylists = async () => {
+        if (!currentUser) return;
+        setLoadingPlaylists(true);
+        try {
+            const res = await axios.get(`/api/v1/playlist/user/${currentUser._id}`);
+            const data = res.data.data;
+            setUserPlaylists(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Error fetching playlists", error);
+            setUserPlaylists([]);
+        } finally {
+            setLoadingPlaylists(false);
+        }
+    };
+
+    const handleSaveToPlaylist = () => {
+        if (!currentUser) return toast.error("Please login to save videos");
+        setShowPlaylistModal(true);
+        fetchUserPlaylists();
+    };
+
+    const createPlaylist = async () => {
+        if (!newPlaylistName.trim()) return toast.error("Playlist name is required");
+        setCreatingPlaylist(true);
+        try {
+            await axios.post('/api/v1/playlist', { name: newPlaylistName, isPublic: true });
+            toast.success("Playlist created");
+            setNewPlaylistName("");
+            fetchUserPlaylists();
+        } catch (error) {
+            toast.error("Failed to create playlist");
+        } finally {
+            setCreatingPlaylist(false);
+        }
+    };
+
+    const addVideoToPlaylist = async (playlistId) => {
+        try {
+            await axios.patch(`/api/v1/playlist/add/${videoId}/${playlistId}`);
+            toast.success("Added to playlist");
+            setShowPlaylistModal(false);
+        } catch (error) {
+            toast.error("Failed to add to playlist");
+        }
+    };
+
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
         if (!newComment.trim()) return;
@@ -107,7 +170,9 @@ function WatchVideo() {
             // Ideally re-fetch or assume owner is current user if we had that info handy
             // For now, let's just re-fetch comments to be safe and get populated owner
             const commentsRes = await axios.get(`/api/v1/comments/v/${videoId}`);
-            setComments(commentsRes.data.data.docs || commentsRes.data.data || []);
+            const responseData = commentsRes.data.data;
+            const commentsData = responseData.comments || responseData.docs || responseData || [];
+            setComments(Array.isArray(commentsData) ? commentsData : []);
             
             setNewComment("");
             toast.success("Comment added");
@@ -177,13 +242,17 @@ function WatchVideo() {
                             <span className="font-medium">{likeState.likesCount}</span>
                         </button>
                         <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"
-                            onClick={() => {
-                                navigator.clipboard.writeText(window.location.href);
-                                toast.success("Link copied!");
-                            }}
+                            onClick={() => setShowShareModal(true)}
                         >
                             <Share2 size={20} />
                             <span className="hidden sm:inline">Share</span>
+                        </button>
+                        <button 
+                            onClick={handleSaveToPlaylist}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"
+                        >
+                            <ListPlus size={20} />
+                            <span className="hidden sm:inline">Save</span>
                         </button>
                     </div>
                 </div>
@@ -207,8 +276,8 @@ function WatchVideo() {
                     {/* Add Comment */}
                     <form onSubmit={handleCommentSubmit} className="flex gap-4 mb-6">
                         <img 
-                            src="https://placehold.co/40" // Placeholder for current user avatar as we don't have it explicitly globally readily available
-                            className="w-10 h-10 rounded-full" 
+                            src={currentUserAvatar} 
+                            className="w-10 h-10 rounded-full object-cover" 
                             alt="current user" 
                         />
                         <div className="flex-1 flex gap-2">
@@ -264,6 +333,68 @@ function WatchVideo() {
                     ))}
                 </div>
             </div>
+
+            {/* Playlist Modal */}
+            {showPlaylistModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
+                        <button 
+                            onClick={() => setShowPlaylistModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                        >
+                            <X size={24} />
+                        </button>
+                        
+                        <h2 className="text-xl font-bold mb-4">Save to playlist</h2>
+
+                        <div className="max-h-[300px] overflow-y-auto mb-4 space-y-2">
+                            {loadingPlaylists ? (
+                                <p className="text-center text-gray-500 py-4">Loading...</p>
+                            ) : userPlaylists.length === 0 ? (
+                                <p className="text-center text-gray-500 py-4">No playlists found</p>
+                            ) : (
+                                userPlaylists.map(playlist => (
+                                    <button 
+                                        key={playlist._id}
+                                        onClick={() => addVideoToPlaylist(playlist._id)}
+                                        className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition flex items-center justify-between group"
+                                    >
+                                        <span className="font-medium">{playlist.name}</span>
+                                        <span className="text-xs text-gray-500 group-hover:text-purple-400">{playlist.totalVideos} videos</span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="border-t border-gray-800 pt-4">
+                            <label className="text-sm text-gray-400 mb-2 block">Create new playlist</label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    placeholder="Enter playlist name..." 
+                                    value={newPlaylistName}
+                                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                                    className="bg-gray-800 border-gray-700 h-10"
+                                />
+                                <Button 
+                                    onClick={createPlaylist} 
+                                    className="h-10 px-3"
+                                    disabled={creatingPlaylist}
+                                >
+                                    <Plus size={20} />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Share Modal */}
+            <ShareModal 
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                url={window.location.href}
+                title={`Check out "${video?.title || 'this video'}"`}
+            />
         </div>
     );
 }

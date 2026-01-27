@@ -18,6 +18,11 @@ function PlaylistDetail() {
     const [editForm, setEditForm] = useState({ name: '', description: '', isPublic: true });
     const [saving, setSaving] = useState(false);
 
+    // Modal States
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showRemoveVideoModal, setShowRemoveVideoModal] = useState(false);
+    const [videoToRemove, setVideoToRemove] = useState(null);
+
     // Auth User
     const userString = localStorage.getItem("user");
     const currentUser = userString && userString !== "undefined" ? JSON.parse(userString) : null;
@@ -88,27 +93,37 @@ function PlaylistDetail() {
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to delete this playlist? This cannot be undone.")) return;
-        
+    const confirmDeletePlaylist = async () => {
         try {
             await axios.delete(`/api/v1/playlist/${playlistId}`);
             toast.success("Playlist deleted");
             navigate(`/c/${currentUser.username}`); // Redirect to profile
         } catch (error) {
             toast.error("Failed to delete playlist");
+            setShowDeleteModal(false);
         }
     };
 
-     const handleRemoveVideo = async (videoId) => {
-        if (!window.confirm("Remove video from this playlist?")) return;
+    const confirmRemoveVideo = async () => {
+        if (!videoToRemove) return;
         try {
-            await axios.patch(`/api/v1/playlist/remove/${videoId}/${playlistId}`);
+            await axios.patch(`/api/v1/playlist/remove/${videoToRemove}/${playlistId}`);
             toast.success("Video removed");
+            setVideoToRemove(null);
+            setShowRemoveVideoModal(false);
             fetchPlaylist(); // Refresh
         } catch (error) {
              toast.error("Failed to remove video");
         }
+    };
+
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+     const handleRemoveVideoClick = (videoId) => {
+        setVideoToRemove(videoId);
+        setShowRemoveVideoModal(true);
     };
 
 
@@ -158,7 +173,7 @@ function PlaylistDetail() {
                                         <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2" bgColor="bg-gray-800" textColor="text-white">
                                             <Edit2 size={16} /> Edit
                                         </Button>
-                                        <button onClick={handleDelete} className="p-2 bg-gray-800 rounded-lg hover:bg-red-500/20 hover:text-red-500 text-gray-400 transition-colors" title="Delete Playlist">
+                                        <button onClick={handleDeleteClick} className="p-2 bg-gray-800 rounded-lg hover:bg-red-500/20 hover:text-red-500 text-gray-400 transition-colors" title="Delete Playlist">
                                             <Trash2 size={20} />
                                         </button>
                                     </div>
@@ -243,7 +258,7 @@ function PlaylistDetail() {
                                       {/* Quick Actions for Owner */}
                                       {isOwner && (
                                          <button 
-                                            onClick={() => handleRemoveVideo(video._id)}
+                                            onClick={() => handleRemoveVideoClick(video._id)}
                                             className="text-gray-500 hover:text-red-500 text-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 top-4 bg-black/80 p-2 rounded-lg"
                                          >
                                             <X size={14} /> Remove from playlist
@@ -259,6 +274,55 @@ function PlaylistDetail() {
                     )}
                 </div>
             </div>
+            {/* Delete Playlist Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
+                        <h3 className="text-xl font-bold mb-2">Delete Playlist</h3>
+                        <p className="text-gray-400 mb-6">Are you sure you want to delete this playlist? This action cannot be undone.</p>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setShowDeleteModal(false)}
+                                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <Button 
+                                onClick={confirmDeletePlaylist}
+                                className="bg-red-500 hover:bg-red-600 border-none text-white px-4 py-2 rounded-lg"
+                            >
+                                Delete Playlist
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Remove Video Modal */}
+            {showRemoveVideoModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
+                        <h3 className="text-xl font-bold mb-2">Remove Video</h3>
+                        <p className="text-gray-400 mb-6">Are you sure you want to remove this video from the playlist?</p>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setShowRemoveVideoModal(false)}
+                                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <Button 
+                                onClick={confirmRemoveVideo}
+                                className="bg-red-500 hover:bg-red-600 border-none text-white px-4 py-2 rounded-lg"
+                            >
+                                Remove
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

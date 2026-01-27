@@ -219,9 +219,17 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
+  await User.findByIdAndUpdate(req.user?._id, {
+    $addToSet: {
+      watchHistory: videoId,
+    },
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200, videoAggregate[0], "Video fetched successfully"));
+    .json(
+      new ApiResponse(200, videoAggregate[0], "Video fetched successfully")
+    );
 });
 
 // ===================================================

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { User, Mail, Camera, Save, X, Edit2, PlaySquare, MessageSquare, Plus, Lock, Globe } from 'lucide-react';
+import { User, Mail, Camera, Save, X, Edit2, PlaySquare, MessageSquare, Plus, Lock, Globe, Trash2, Send, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -18,6 +18,14 @@ function UserProfile() {
     const [showPlaylistModal, setShowPlaylistModal] = useState(false);
     const [createPlaylistForm, setCreatePlaylistForm] = useState({ name: '', description: '', isPublic: true });
     const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
+    // Tweet State
+    const [tweetContent, setTweetContent] = useState("");
+    const [creatingTweet, setCreatingTweet] = useState(false);
+    const [editingTweetId, setEditingTweetId] = useState(null);
+    const [editTweetContent, setEditTweetContent] = useState("");
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [tweetToDelete, setTweetToDelete] = useState(null);
 
     // Tab State
     const [activeTab, setActiveTab] = useState('videos');
@@ -104,20 +112,15 @@ function UserProfile() {
                     if (response.data.success) setTabData(response.data.data.videos);
                     break;
                 case 'playlists':
-                     // Only fetch if owner (backend restriction)
-                     if (isOwner) {
-                        response = await axios.get(`/api/v1/playlist/user/${profile._id}`);
-                        // Backend bug workaround: data and message arguments swapped in controller
-                        // Expected: data=playlists, message=string. Actual: data=string, message=playlists.
-                        const list = Array.isArray(response.data.data) ? response.data.data : response.data.message;
-                        if (response.data.success) setTabData(list || []);
-                     }
+                    response = await axios.get(`/api/v1/playlist/user/${profile._id}`);
+                    // Backend bug workaround: data and message arguments swapped in controller
+                    // Expected: data=playlists, message=string. Actual: data=string, message=playlists.
+                    const list = Array.isArray(response.data.data) ? response.data.data : response.data.message;
+                    if (response.data.success) setTabData(list || []);
                     break;
                 case 'tweets':
                     response = await axios.get(`/api/v1/tweets/user/${profile._id}`);
-                    // Backend bug workaround: data and message arguments swapped in controller
-                    const tweets = Array.isArray(response.data.data) ? response.data.data : response.data.message;
-                    if (response.data.success) setTabData(tweets || []);
+                    if (response.data.success) setTabData(response.data.data || []);
                     break;
                 default:
                     setTabData([]);
@@ -197,6 +200,24 @@ function UserProfile() {
     };
 
 
+    const handleSubscribe = async () => {
+        try {
+            const response = await axios.post(`/api/v1/subscriptions/u/${profile._id}`);
+            if (response.data.success) {
+                setProfile(prev => ({
+                    ...prev,
+                    isSubscribed: !prev.isSubscribed,
+                    subscribersCount: prev.isSubscribed ? prev.subscribersCount - 1 : prev.subscribersCount + 1
+                }));
+                toast.success(profile.isSubscribed ? "Unsubscribed" : "Subscribed");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to toggle subscription");
+        }
+    };
+
+
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setUploading(true);
@@ -245,6 +266,64 @@ function UserProfile() {
         } finally {
             setCreatingPlaylist(false);
         }
+    };
+
+    // Tweet Handlers
+    const handleCreateTweet = async (e) => {
+        e.preventDefault();
+        if (!tweetContent.trim()) return;
+        
+        setCreatingTweet(true);
+        try {
+            const response = await axios.post('/api/v1/tweets', { content: tweetContent });
+            if (response.data.success) {
+                toast.success("Tweet posted");
+                setTweetContent("");
+                if (activeTab === 'tweets') fetchTabData();
+            }
+        } catch (error) {
+            toast.error("Failed to post tweet");
+        } finally {
+            setCreatingTweet(false);
+        }
+    };
+
+    const handleUpdateTweet = async (tweetId) => {
+        if (!editTweetContent.trim()) return toast.error("Content cannot be empty");
+        
+        try {
+            const response = await axios.patch(`/api/v1/tweets/${tweetId}`, { content: editTweetContent });
+            if (response.data.success) {
+                toast.success("Tweet updated");
+                setEditingTweetId(null);
+                setEditTweetContent("");
+                // Optimistic update
+                setTabData(prev => prev.map(t => t._id === tweetId ? { ...t, content: response.data.data.content } : t));
+            }
+        } catch (error) {
+            toast.error("Failed to update tweet");
+        }
+    };
+
+    const confirmDeleteTweet = async () => {
+         if(!tweetToDelete) return;
+
+         try {
+             const response = await axios.delete(`/api/v1/tweets/${tweetToDelete}`);
+             if (response.data.success) {
+                 toast.success("Tweet deleted");
+                 setTabData(prev => prev.filter(t => t._id !== tweetToDelete));
+                 setShowDeleteModal(false);
+                 setTweetToDelete(null);
+             }
+         } catch (error) {
+             toast.error("Failed to delete tweet");
+         }
+    };
+
+    const handleDeleteClick = (tweetId) => {
+        setTweetToDelete(tweetId);
+        setShowDeleteModal(true);
     };
 
     if (loading) return <div className="text-center mt-20 text-white">Loading Profile...</div>;
@@ -301,9 +380,16 @@ function UserProfile() {
                                         <span>{profile.channelsSubscribedToCount || 0} subscribed</span>
                                     </div>
                                 </div>
-                                {isOwner && (
+                                {isOwner ? (
                                     <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
                                         <Edit2 size={16} /> Edit Profile
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        onClick={handleSubscribe} 
+                                        className={`flex items-center gap-2 ${profile.isSubscribed ? "bg-gray-600 hover:bg-gray-500" : ""}`}
+                                    >
+                                        {profile.isSubscribed ? "Subscribed" : "Subscribe"}
                                     </Button>
                                 )}
                             </div>
@@ -401,36 +487,34 @@ function UserProfile() {
                                         </button>
                                     )}
 
-                                    {isOwner ? (
-                                        tabData.length > 0 ? (
-                                            tabData.map(playlist => (
-                                                <Link key={playlist._id} to={`/playlist/${playlist._id}`} className="group block space-y-3 cursor-pointer">
-                                                    <div className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
-                                                        {playlist.playlistThumbnail ? (
-                                                             <img src={playlist.playlistThumbnail} alt={playlist.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                        ) : (
-                                                            <div className="flex items-center justify-center h-full text-gray-500">
-                                                                <PlaySquare size={48} className="opacity-50" />
-                                                            </div>
-                                                        )}
-                                                        <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm p-2 flex justify-between items-center text-xs text-white">
-                                                             <span>{playlist.totalVideos} videos</span>
-                                                             <span className="opacity-75 flex items-center gap-1">
-                                                                {playlist.isPublic ? <Globe size={10}/> : <Lock size={10}/>}
-                                                                {playlist.isPublic ? 'Public' : 'Private'}
-                                                             </span>
+                                    {/* List Playlists */}
+                                    {tabData.length > 0 ? (
+                                        tabData.map(playlist => (
+                                            <Link key={playlist._id} to={`/playlist/${playlist._id}`} className="group block space-y-3 cursor-pointer">
+                                                <div className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                                                    {playlist.playlistThumbnail ? (
+                                                         <img src={playlist.playlistThumbnail} alt={playlist.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                    ) : (
+                                                        <div className="flex items-center justify-center h-full text-gray-500">
+                                                            <PlaySquare size={48} className="opacity-50" />
                                                         </div>
+                                                    )}
+                                                    <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm p-2 flex justify-between items-center text-xs text-white">
+                                                         <span>{playlist.totalVideos} videos</span>
+                                                         {/* Show visibility status logic: if owner, show lock/globe. if public, it's public. */}
+                                                         <span className="opacity-75 flex items-center gap-1">
+                                                            {playlist.isPublic ? <Globe size={10}/> : <Lock size={10}/>}
+                                                            {playlist.isPublic ? 'Public' : 'Private'}
+                                                         </span>
                                                     </div>
-                                                    <h3 className="font-semibold text-white group-hover:text-blue-400 truncate">{playlist.name}</h3>
-                                                    <p className="text-sm text-gray-400 line-clamp-2">{playlist.description}</p>
-                                                </Link>
-                                            ))
-                                        ) : (
-                                            !isOwner && <div className="col-span-full text-center text-gray-500 py-10">No playlists found.</div>
-                                        )
+                                                </div>
+                                                <h3 className="font-semibold text-white group-hover:text-blue-400 truncate">{playlist.name}</h3>
+                                                <p className="text-sm text-gray-400 line-clamp-2">{playlist.description}</p>
+                                            </Link>
+                                        ))
                                     ) : (
                                         <div className="col-span-full text-center text-gray-500 py-10 text-lg">
-                                            This user's playlists are private.
+                                            {isOwner ? "No playlists found." : "This user has no public playlists."}
                                         </div>
                                     )}
                                 </div>
@@ -439,27 +523,105 @@ function UserProfile() {
                              {/* Tweets Tab */}
                              {activeTab === 'tweets' && (
                                 <div className="max-w-3xl space-y-4">
+                                     {/* Create Tweet Form */}
+                                     {isOwner && (
+                                         <div className="bg-gray-900 border border-gray-800 p-4 rounded-xl mb-6">
+                                             <div className="flex gap-3">
+                                                 <img src={currentUser?.avatar || profile.avatar} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                                                 <div className="flex-1">
+                                                     <textarea
+                                                         value={tweetContent}
+                                                         onChange={(e) => setTweetContent(e.target.value)}
+                                                         placeholder="What's happening?"
+                                                         className="w-full bg-transparent text-white border-none focus:ring-0 resize-none min-h-[80px] p-0 text-lg placeholder-gray-500 outline-none"
+                                                     />
+                                                     <div className="flex justify-end mt-2 pt-2 border-t border-gray-800">
+                                                         <Button 
+                                                             onClick={handleCreateTweet} 
+                                                             disabled={creatingTweet || !tweetContent.trim()}
+                                                             className="px-4 py-1.5 rounded-full"
+                                                         >
+                                                             {creatingTweet ? "Posting..." : "Post"}
+                                                         </Button>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     )}
+
                                      {tabData.length > 0 ? (
                                         tabData.map(tweet => (
                                             <div key={tweet._id} className="bg-gray-900 border border-gray-800 p-4 rounded-xl">
                                                 <div className="flex gap-3">
-                                                    <img src={tweet.ownerDetails?.avatar || profile.avatar} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                                                    <Link to={`/c/${profile.username}`}>
+                                                        <img src={tweet.ownerDetails?.avatar || profile.avatar} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                                                    </Link>
                                                     <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                             <h4 className="font-semibold text-white">{tweet.ownerDetails?.fullName || profile.fullName}</h4>
-                                                             <span className="text-gray-500 text-sm">@{profile.username} · {new Date(tweet.createdAt).toLocaleDateString()}</span>
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                 <Link to={`/c/${profile.username}`} className="font-semibold text-white hover:underline">
+                                                                    {tweet.ownerDetails?.fullName || profile.fullName}
+                                                                 </Link>
+                                                                 <span className="text-gray-500 text-sm">@{profile.username} · {new Date(tweet.createdAt).toLocaleDateString()}</span>
+                                                            </div>
+                                                            {isOwner && (
+                                                                <div className="flex items-center gap-2">
+                                                                    {!editingTweetId && (
+                                                                        <>
+                                                                            <button 
+                                                                                onClick={() => {
+                                                                                    setEditingTweetId(tweet._id);
+                                                                                    setEditTweetContent(tweet.content);
+                                                                                }}
+                                                                                className="text-gray-500 hover:text-blue-400 p-1 rounded-full hover:bg-gray-800 transition-colors"
+                                                                            >
+                                                                                <Edit2 size={16} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={() => handleDeleteClick(tweet._id)}
+                                                                                className="text-gray-500 hover:text-red-400 p-1 rounded-full hover:bg-gray-800 transition-colors"
+                                                                            >
+                                                                                <Trash2 size={16} />
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <p className="text-gray-300">{tweet.content}</p>
-                                                        {/* Actions placeholders */}
-                                                        <div className="flex gap-6 mt-3 text-gray-500 text-sm">
-                                                            <button className="flex items-center gap-1 hover:text-blue-400"><MessageSquare size={16} /> Comment</button>
-                                                        </div>
+
+                                                        {editingTweetId === tweet._id ? (
+                                                            <div className="mt-2">
+                                                                <textarea
+                                                                    value={editTweetContent}
+                                                                    onChange={(e) => setEditTweetContent(e.target.value)}
+                                                                    className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none min-h-[100px]"
+                                                                />
+                                                                <div className="flex gap-2 justify-end mt-2">
+                                                                    <button 
+                                                                        onClick={() => setEditingTweetId(null)}
+                                                                        className="px-3 py-1.5 text-sm text-gray-400 hover:text-white"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleUpdateTweet(tweet._id)}
+                                                                        className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center gap-1"
+                                                                    >
+                                                                        <Save size={14} /> Save
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-gray-300 whitespace-pre-wrap">{tweet.content}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                         ))
                                      ) : (
-                                        <div className="text-center text-gray-500 py-10">No tweets found.</div>
+                                        <div className="text-center text-gray-500 py-10">
+                                            {isOwner ? "You haven't posted any tweets yet." : "No tweets found."}
+                                        </div>
                                      )}
                                 </div>
                              )}
@@ -467,6 +629,31 @@ function UserProfile() {
                     )}
                 </div>
             </div>
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
+                        <h3 className="text-xl font-bold mb-2">Delete Tweet</h3>
+                        <p className="text-gray-400 mb-6">Are you sure you want to delete this tweet? This action cannot be undone.</p>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setShowDeleteModal(false)}
+                                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <Button 
+                                onClick={confirmDeleteTweet}
+                                className="bg-red-500 hover:bg-red-600 border-none text-white px-4 py-2 rounded-lg"
+                            >
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Create Playlist Modal */}
             {showPlaylistModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">

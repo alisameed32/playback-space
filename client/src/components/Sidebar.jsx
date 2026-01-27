@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, LayoutDashboard, ThumbsUp, History, UserCheck, Settings, HelpCircle } from 'lucide-react';
+import { Home, LayoutDashboard, ThumbsUp, History, UserCheck, Settings, MessageSquare } from 'lucide-react';
 
 function Sidebar({ isOpen }) {
   const sidebarItems = [
     { icon: Home, label: 'Home', path: '/feed' },
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: MessageSquare, label: 'Tweets', path: '/tweets' },
     { icon: ThumbsUp, label: 'Liked Videos', path: '/liked-videos' },
     { icon: History, label: 'History', path: '/history' },
     { icon: UserCheck, label: 'Subscriptions', path: '/subscriptions' },

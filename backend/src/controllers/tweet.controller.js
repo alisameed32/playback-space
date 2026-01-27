@@ -6,6 +6,88 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { verifyTweetOwnership } from "../utils/utils.js";
 
 // =================================
+// Get All Tweets
+// =================================
+const getAllTweets = asyncHandler(async (req, res) => {
+  const tweets = await Tweet.aggregate([
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "User",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              avatar: 1,
+              username: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$ownerDetails" },
+    {
+      $lookup: {
+        from: "Like",
+        let: { tweetId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$tweet", "$$tweetId"] },
+            },
+          },
+        ],
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "Comment",
+        let: { tweetId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$tweet", "$$tweetId"] },
+            },
+          },
+        ],
+        as: "comments",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        commentsCount: { $size: "$comments" },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        ownerDetails: 1,
+        likesCount: 1,
+        commentsCount: 1,
+        isLiked: 1,
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweets, "All tweets fetched successfully"));
+});
+
+// =================================
 // Create Tweet
 // =================================
 const createTweet = asyncHandler(async (req, res) => {
@@ -22,7 +104,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(201, "Tweet created successfully", newTweet));
+    .json(new ApiResponse(201, newTweet, "Tweet created successfully"));
 });
 
 // =================================
@@ -72,7 +154,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
   ]);
   return res
     .status(200)
-    .json(new ApiResponse(200, "User tweets fetched successfully", tweets));
+    .json(new ApiResponse(200, tweets, "User tweets fetched successfully"));
 });
 
 // =================================
@@ -94,7 +176,7 @@ const updateTweet = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Tweet updated successfully", tweet));
+    .json(new ApiResponse(200, tweet, "Tweet updated successfully"));
 });
 
 // =================================
@@ -108,7 +190,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Tweet deleted successfully", deleteTweet));
+    .json(new ApiResponse(200, deleteTweet, "Tweet deleted successfully"));
 });
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet };
+export { createTweet, getUserTweets, updateTweet, deleteTweet, getAllTweets };
