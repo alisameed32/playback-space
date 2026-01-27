@@ -225,6 +225,12 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
   });
 
+  await Video.findByIdAndUpdate(videoId, {
+    $inc: {
+      views: 1,
+    },
+  });
+
   return res
     .status(200)
     .json(
