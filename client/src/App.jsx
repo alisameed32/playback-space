@@ -12,6 +12,8 @@ import WatchVideo from './pages/WatchVideo'
 import History from './pages/History'
 import Tweets from './pages/Tweets'
 import LikedVideos from './pages/LikedVideos'
+import Subscriptions from './pages/Subscriptions'
+import Settings from './pages/Settings'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Container from './components/Container'
@@ -84,8 +86,8 @@ const router = createBrowserRouter([
       { path: "/liked-videos", element: <LikedVideos /> },
       { path: "/history", element: <History /> },
       { path: "/tweets", element: <Tweets /> },
-      { path: "/subscriptions", element: <div className='pt-20 text-center'>Subscriptions Coming Soon</div> },
-      { path: "/settings", element: <div className='pt-20 text-center'>Settings Coming Soon</div> },
+      { path: "/subscriptions", element: <Subscriptions /> },
+      { path: "/settings", element: <Settings /> },
     ]
   },
   {

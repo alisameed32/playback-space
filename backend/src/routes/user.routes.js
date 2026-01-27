@@ -13,6 +13,7 @@ import {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteUser,
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -42,6 +43,7 @@ router.route("/refresh-access-token").get(refreshAccessToken);
 
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/change-password").post(verifyJWT, changePassword);
+router.route("/delete-account").delete(verifyJWT, deleteUser);
 
 // --- Current User Profile Management ---
 

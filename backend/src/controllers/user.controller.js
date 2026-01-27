@@ -522,6 +522,24 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+// =======================================
+// Delete User Account
+// =======================================
+const deleteUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndDelete(req.user._id);
+  
+  const options = {
+      httpOnly: true,
+      secure: true
+  };
+
+  return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new ApiResponse(200, {}, "User account deleted successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -534,4 +552,6 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteUser,
 };
+
