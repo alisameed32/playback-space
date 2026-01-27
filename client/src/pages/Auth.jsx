@@ -88,7 +88,7 @@ function Auth() {
       if (response.data.success) {
         localStorage.setItem("user", JSON.stringify(response.data.data.user));
         toast.success("Login Successful");
-        setTimeout(() => navigate('/'), 1000);
+        setTimeout(() => navigate('/feed'), 1000);
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Login failed";

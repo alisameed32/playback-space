@@ -45,7 +45,7 @@ function VideoCard({ video }) {
 
             {/* Video Info */}
             <div className="flex gap-3 items-start">
-                <Link to={`/channel/${owner.username}`} className="shrink-0 mt-0.5">
+                <Link to={`/c/${owner.username}`} className="shrink-0 mt-0.5">
                     <img src={ownerAvatar} alt={ownerName} className="w-9 h-9 rounded-full object-cover" />
                 </Link>
                 <div className="flex flex-col">

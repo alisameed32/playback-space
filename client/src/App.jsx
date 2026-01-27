@@ -1,10 +1,14 @@
-import { createBrowserRouter, RouterProvider, Outlet, ScrollRestoration } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
+import { Toaster } from 'react-hot-toast'
 import Auth from './pages/Auth'
 import Feed from './pages/Feed'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
+import UserProfile from './pages/UserProfile'
+import PlaylistDetail from './pages/PlaylistDetail'
+import WatchVideo from './pages/WatchVideo'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Container from './components/Container'
@@ -15,6 +19,8 @@ axios.defaults.withCredentials = true;
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const location = useLocation();
+  const isWatchPage = location.pathname.startsWith('/watch/');
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -22,7 +28,8 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-       <Header toggleSidebar={toggleSidebar} />
+       <Toaster position="top-center" reverseOrder={false} />
+       <Header toggleSidebar={toggleSidebar} isOpen={isSidebarOpen} />
        <Sidebar isOpen={isSidebarOpen} />
        
        <main 
@@ -31,9 +38,11 @@ const Layout = () => {
            ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}
          `}
        >
-         <Container>
-            <Outlet />
-         </Container>
+         {isWatchPage ? <Outlet /> : (
+           <Container>
+              <Outlet />
+           </Container>
+         )}
        </main>
        <ScrollRestoration />
     </div>
@@ -55,6 +64,18 @@ const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <Dashboard />,
+      },
+      {
+        path: "/c/:username",
+        element: <UserProfile />,
+      },
+      {
+        path: "/playlist/:playlistId",
+        element: <PlaylistDetail />,
+      },
+      {
+        path: "/watch/:videoId",
+        element: <WatchVideo />,
       },
       // Placeholder for other sidebar links to avoid 404
       { path: "/liked-videos", element: <div className='pt-20 text-center'>Liked Videos Coming Soon</div> },

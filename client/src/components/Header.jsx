@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Search, User, Menu, Video, LayoutDashboard, LogOut } from 'lucide-react';
+import { Search, User, Menu, Video, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Logo from './Logo';
 import Button from './Button';
 
-function Header({ toggleSidebar }) {
+function Header({ toggleSidebar, isOpen }) {
   const navigate = useNavigate();
   const { register, handleSubmit } = useForm();
   // Safe parsing of user data
@@ -35,8 +35,8 @@ function Header({ toggleSidebar }) {
         
         {/* Left: Logo & Menu */}
         <div className="flex items-center gap-4">
-          <button onClick={toggleSidebar} className="p-2 hover:bg-gray-800 rounded-full lg:hidden text-white">
-            <Menu size={24} />
+          <button onClick={toggleSidebar} className="p-2 hover:bg-gray-800 rounded-full text-white transition-colors duration-200">
+            {isOpen ? <PanelLeftClose size={24} /> : <PanelLeftOpen size={24} />}
           </button>
           <Link to="/feed" className="flex items-center gap-1">
             <img src="/Logo_Playback_Space.png" alt="PlaybackSpace" className="h-10 w-auto" />
@@ -82,6 +82,9 @@ function Header({ toggleSidebar }) {
                              <p className="text-sm font-semibold text-white truncate">{user.fullName}</p>
                              <p className="text-xs text-gray-400 truncate">@{user.username}</p>
                         </div>
+                        <Link to={`/c/${user.username}`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800">
+                            <User size={16} /> View Profile
+                        </Link>
                         <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800">
                             <LayoutDashboard size={16} /> Dashboard
                         </Link>

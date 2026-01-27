@@ -40,7 +40,7 @@ function Login() {
 
                 toast.success("Login Successful")
                 setTimeout(() => {
-                     navigate('/')
+                     navigate('/feed')
                 }, 1000)
             }
         } catch (error) {
