@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
@@ -176,6 +177,12 @@ function Auth() {
 
         <div className="w-full max-w-md relative z-10 bg-black/40 lg:bg-transparent sm:backdrop-blur-none backdrop-blur-md p-6 sm:p-0 rounded-2xl border border-white/10 lg:border-none shadow-2xl lg:shadow-none">
             
+            <div className="mb-6">
+                <Link to="/" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors">
+                    <ArrowLeft size={16} className="mr-2" /> Back to Home
+                </Link>
+            </div>
+
             {/* Mobile Logo */}
             <div className="lg:hidden mb-4 flex flex-col items-center">
                 <div className="mb-0">

@@ -293,9 +293,13 @@ const Landing = () => {
                              <h4 className="font-bold text-white mb-1">Backend</h4>
                              <p className="text-sm text-gray-400">Node.js, Express, MongoDB, Cloudinary</p>
                          </div>
+                         <div className="p-4 bg-black/40 rounded-xl border border-white/5 col-span-2">
+                             <h4 className="font-bold text-white mb-1">DevOps</h4>
+                             <p className="text-sm text-gray-400">Jenkins, Kubernetes, AWS, Trivy, SonarQube, Docker</p>
+                         </div>
                      </div>
                      
-                     <a href="https://github.com/alisameed" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition font-medium">
+                     <a href="https://github.com/alisameed32/playback-space" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition font-medium">
                          View Source Code <ArrowRight size={16} />
                      </a>
                 </div>
@@ -368,10 +372,10 @@ const Landing = () => {
                 <div>
                     <h4 className="font-bold mb-6 text-white">Connect</h4>
                     <div className="flex gap-4">
-                        <a href="https://github.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-colors">
+                        <a href="https://github.com/alisameed32" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-colors">
                             <Github size={18} />
                         </a>
-                        <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#0077b5] hover:text-white transition-colors">
+                        <a href="https://linkedin.com/in/alisameed" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#0077b5] hover:text-white transition-colors">
                             <Linkedin size={18} />
                         </a>
                         <a href="https://instagram.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-600 hover:text-white transition-colors">
