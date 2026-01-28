@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Heart, MessageSquare, Share2, Send, X, MoreVertical, Copy, Twitter, Facebook, Linkedin } from 'lucide-react';
 import Button from '../components/Button';
 import ShareModal from '../components/ShareModal';
+import { BASE_URL } from '../constants';
 
 function Tweets() {
     const [tweets, setTweets] = useState([]);
@@ -34,7 +35,7 @@ function Tweets() {
     const fetchTweets = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/v1/tweets/feed');
+            const response = await axios.get(`${BASE_URL}tweets/feed`);
             if (response.data.success) {
                 setTweets(response.data.data);
             }
@@ -52,7 +53,7 @@ function Tweets() {
 
         setPosting(true);
         try {
-            const response = await axios.post('/api/v1/tweets', { content: tweetContent });
+            const response = await axios.post(`${BASE_URL}tweets`, { content: tweetContent });
             if (response.data.success) {
                 toast.success("Tweet posted");
                 setTweetContent("");
@@ -67,7 +68,7 @@ function Tweets() {
 
     const handleLike = async (tweetId) => {
         try {
-            const response = await axios.post(`/api/v1/likes/toggle/t/${tweetId}`);
+            const response = await axios.post(`${BASE_URL}likes/toggle/t/${tweetId}`);
             if (response.data.success) {
                 // Optimistic update
                 setTweets(prev => prev.map(tweet => {
@@ -92,7 +93,7 @@ function Tweets() {
         setComments([]);
         setLoadingComments(true);
         try {
-            const response = await axios.get(`/api/v1/comments/t/${tweet._id}`);
+            const response = await axios.get(`${BASE_URL}comments/t/${tweet._id}`);
             if (response.data.success) {
                 // The backend returns { comments: [], totalDocs: ... }
                 setComments(response.data.data.comments || []);
@@ -110,7 +111,7 @@ function Tweets() {
         
         setPostingComment(true);
         try {
-            const response = await axios.post(`/api/v1/comments/t/${activeTweetForComments._id}`, { content: commentContent });
+            const response = await axios.post(`${BASE_URL}comments/t/${activeTweetForComments._id}`, { content: commentContent });
             if (response.data.success) {
                 toast.success("Comment added");
                 setCommentContent("");

@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
+import { BASE_URL } from '../constants';
 
 // Modern animated background component
 const ModernBackground = () => (
@@ -85,7 +86,7 @@ function Auth() {
         payload.username = data.usernameOrEmail;
       }
 
-      const response = await axios.post('/api/v1/users/login', payload);
+      const response = await axios.post(`${BASE_URL}users/login`, payload);
       if (response.data.success) {
         localStorage.setItem("user", JSON.stringify(response.data.data.user));
         toast.success("Login Successful");
@@ -111,7 +112,7 @@ function Auth() {
     if (data.coverImage && data.coverImage[0]) formData.append("coverImage", data.coverImage[0]);
 
     try {
-      const response = await axios.post('/api/v1/users/register', formData, {
+      const response = await axios.post(`${BASE_URL}users/register`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       if (response.data.success) {

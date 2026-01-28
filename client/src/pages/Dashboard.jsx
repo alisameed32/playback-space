@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import VideoCard from '../components/VideoCard';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { BASE_URL } from '../constants';
 
 function Dashboard() {
     const [stats, setStats] = useState({});
@@ -34,8 +35,8 @@ function Dashboard() {
         setLoading(true);
         try {
             const [statsRes, videosRes] = await Promise.all([
-                axios.get('/api/v1/dashboard/stats'),
-                axios.get('/api/v1/dashboard/videos')
+                axios.get(`${BASE_URL}dashboard/stats`),
+                axios.get(`${BASE_URL}dashboard/videos`)
             ]);
             
             // Backend dashboard controller might have argument order issue in ApiResponse
@@ -83,7 +84,7 @@ function Dashboard() {
         }
 
         try {
-            const response = await axios.post('/api/v1/videos', formData, {
+            const response = await axios.post(`${BASE_URL}videos`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data" 
                 }
@@ -100,7 +101,7 @@ function Dashboard() {
                     thumbnailFile: null
                 });
                 // Refresh list
-                const videosRes = await axios.get('/api/v1/dashboard/videos');
+                const videosRes = await axios.get(`${BASE_URL}dashboard/videos`);
                 const videosData = videosRes.data.data || videosRes.data;
                 if (Array.isArray(videosData)) {
                     setVideos(videosData);
@@ -131,7 +132,7 @@ function Dashboard() {
         
         const toastId = toast.loading("Deleting video...");
         try {
-            await axios.delete(`/api/v1/videos/${videoToDelete}`);
+            await axios.delete(`${BASE_URL}videos/${videoToDelete}`);
             toast.success("Video deleted successfully", { id: toastId });
             setVideos(prev => prev.filter(v => v._id !== videoToDelete));
             // Update stats locally
@@ -172,13 +173,13 @@ function Dashboard() {
         }
 
         try {
-            await axios.patch(`/api/v1/videos/${editVideo._id}`, formData, {
+            await axios.patch(`${BASE_URL}videos/${editVideo._id}`, formData, {
                  headers: { "Content-Type": "multipart/form-data" }
             });
             
             // Handle Publish Status Toggle
             if (editVideo.isPublished !== editVideo.originalIsPublished) {
-                await axios.patch(`/api/v1/videos/toggle/publish/${editVideo._id}`);
+                await axios.patch(`${BASE_URL}videos/toggle/publish/${editVideo._id}`);
             }
 
             toast.success("Video updated successfully", { id: toastId });

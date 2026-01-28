@@ -6,6 +6,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import Logo from '../components/Logo'
+import { BASE_URL } from '../constants';
 
 function Signup() {
     const navigate = useNavigate()
@@ -29,7 +30,7 @@ function Signup() {
         }
 
         try {
-            const response = await axios.post('/api/v1/users/register', formData, {
+            const response = await axios.post(`${BASE_URL}users/register`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data"
                 }

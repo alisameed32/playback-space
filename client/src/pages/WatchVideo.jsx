@@ -7,6 +7,7 @@ import VideoCard from '../components/VideoCard';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ShareModal from '../components/ShareModal';
+import { BASE_URL } from '../constants';
 
 function WatchVideo() {
     const { videoId } = useParams();
@@ -39,14 +40,14 @@ function WatchVideo() {
             setLoading(true);
             try {
                 // 1. Fetch Video Details
-                const videoRes = await axios.get(`/api/v1/videos/${videoId}`);
+                const videoRes = await axios.get(`${BASE_URL}videos/${videoId}`);
                 const videoData = videoRes.data.data;
                 setVideo(videoData);
                 setLikeState({ isLiked: videoData.isLiked, likesCount: videoData.likesCount });
 
                 // 2. Fetch Channel Info
                 if (videoData.owner?.username) {
-                    const channelRes = await axios.get(`/api/v1/users/c/${videoData.owner.username}`);
+                    const channelRes = await axios.get(`${BASE_URL}users/c/${videoData.owner.username}`);
                     setChannelStats({
                         subscribersCount: channelRes.data.data.subscribersCount,
                         isSubscribed: channelRes.data.data.isSubscribed
@@ -54,7 +55,7 @@ function WatchVideo() {
                 }
 
                 // 3. Fetch Comments
-                const commentsRes = await axios.get(`/api/v1/comments/v/${videoId}`);
+                const commentsRes = await axios.get(`${BASE_URL}comments/v/${videoId}`);
                 // Helper to extract docs from pagination or direct array
                 // Backend 'getCommentsForEntity' returns { comments: [...], totalDocs: ... }
                 const responseData = commentsRes.data.data;
@@ -62,7 +63,7 @@ function WatchVideo() {
                 setComments(Array.isArray(commentsData) ? commentsData : []);
 
                 // 4. Fetch Related Videos
-                const relatedRes = await axios.get('/api/v1/videos?limit=10');
+                const relatedRes = await axios.get(`${BASE_URL}videos?limit=10`);
                 const allVideos = relatedRes.data.data.videos || [];
                 setRelatedVideos(allVideos.filter(v => v._id !== videoId));
 
@@ -81,7 +82,7 @@ function WatchVideo() {
 
     const handleLike = async () => {
         try {
-            await axios.post(`/api/v1/likes/toggle/v/${videoId}`);
+            await axios.post(`${BASE_URL}likes/toggle/v/${videoId}`);
             setLikeState(prev => ({
                 isLiked: !prev.isLiked,
                 likesCount: prev.isLiked ? prev.likesCount - 1 : prev.likesCount + 1
@@ -94,7 +95,7 @@ function WatchVideo() {
     const handleSubscribe = async () => {
         if (!video?.owner?._id) return;
         try {
-            await axios.post(`/api/v1/subscriptions/u/${video.owner._id}`);
+            await axios.post(`${BASE_URL}subscriptions/u/${video.owner._id}`);
             setChannelStats(prev => ({
                 ...prev,
                 isSubscribed: !prev.isSubscribed,
@@ -110,7 +111,7 @@ function WatchVideo() {
         if (!currentUser) return;
         setLoadingPlaylists(true);
         try {
-            const res = await axios.get(`/api/v1/playlist/user/${currentUser._id}`);
+            const res = await axios.get(`${BASE_URL}playlist/user/${currentUser._id}`);
             const data = res.data.data;
             setUserPlaylists(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -131,7 +132,7 @@ function WatchVideo() {
         if (!newPlaylistName.trim()) return toast.error("Playlist name is required");
         setCreatingPlaylist(true);
         try {
-            await axios.post('/api/v1/playlist', { name: newPlaylistName, isPublic: true });
+            await axios.post(`${BASE_URL}playlist`, { name: newPlaylistName, isPublic: true });
             toast.success("Playlist created");
             setNewPlaylistName("");
             fetchUserPlaylists();
@@ -144,7 +145,7 @@ function WatchVideo() {
 
     const addVideoToPlaylist = async (playlistId) => {
         try {
-            await axios.patch(`/api/v1/playlist/add/${videoId}/${playlistId}`);
+            await axios.patch(`${BASE_URL}playlist/add/${videoId}/${playlistId}`);
             toast.success("Added to playlist");
             setShowPlaylistModal(false);
         } catch (error) {
@@ -156,7 +157,7 @@ function WatchVideo() {
         e.preventDefault();
         if (!newComment.trim()) return;
         try {
-            const res = await axios.post(`/api/v1/comments/v/${videoId}`, { content: newComment });
+            const res = await axios.post(`${BASE_URL}comments/v/${videoId}`, { content: newComment });
             // Add new comment to top of list
             // Note: simplistic, ideally we re-fetch or construct full object
             const newCommentObj = { 
@@ -169,7 +170,7 @@ function WatchVideo() {
             };
             // Ideally re-fetch or assume owner is current user if we had that info handy
             // For now, let's just re-fetch comments to be safe and get populated owner
-            const commentsRes = await axios.get(`/api/v1/comments/v/${videoId}`);
+            const commentsRes = await axios.get(`${BASE_URL}comments/v/${videoId}`);
             const responseData = commentsRes.data.data;
             const commentsData = responseData.comments || responseData.docs || responseData || [];
             setComments(Array.isArray(commentsData) ? commentsData : []);

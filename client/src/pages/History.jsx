@@ -3,6 +3,7 @@ import axios from 'axios';
 import { History as HistoryIcon, Trash2 } from 'lucide-react';
 import VideoCard from '../components/VideoCard';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../constants';
 
 function History() {
     const [videos, setVideos] = useState([]);
@@ -11,7 +12,7 @@ function History() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await axios.get('/api/v1/users/history');
+                const res = await axios.get(`${BASE_URL}users/history`);
                 const historyData = res.data.data;
                 // historyData could be an array of videos populated with owner info
                 setVideos(Array.isArray(historyData) ? historyData : []);

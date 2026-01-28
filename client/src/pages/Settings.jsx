@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Trash2, Shield, Lock } from 'lucide-react';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import { BASE_URL } from '../constants';
 
 function Settings() {
     const navigate = useNavigate();
@@ -22,7 +23,7 @@ function Settings() {
 
         setChangingPassword(true);
         try {
-            const response = await axios.post('/api/v1/users/change-password', {
+            const response = await axios.post(`${BASE_URL}users/change-password`, {
                 oldPassword: data.oldPassword,
                 newPassword: data.newPassword
             });
@@ -41,7 +42,7 @@ function Settings() {
     const handleDeleteAccount = async () => {
         setDeletingParams(prev => ({ ...prev, loading: true }));
         try {
-            await axios.delete('/api/v1/users/delete-account');
+            await axios.delete(`${BASE_URL}users/delete-account`);
             toast.success("Account deleted successfully");
             localStorage.removeItem("user");
             navigate('/signup');

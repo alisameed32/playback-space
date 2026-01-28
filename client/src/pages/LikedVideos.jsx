@@ -3,6 +3,7 @@ import axios from 'axios';
 import VideoCard from '../components/VideoCard';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../constants';
 
 function LikedVideos() {
     const [videos, setVideos] = useState([]);
@@ -14,7 +15,7 @@ function LikedVideos() {
              setLoading(true);
              setError(null);
              try {
-                const response = await axios.get('/api/v1/likes/videos');
+                const response = await axios.get(`${BASE_URL}likes/videos`);
                 if (response.data.success) {
                     setVideos(response.data.data.videos);
                 }

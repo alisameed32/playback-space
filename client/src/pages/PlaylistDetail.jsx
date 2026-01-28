@@ -6,6 +6,7 @@ import { PlaySquare, Edit2, Trash2, Globe, Lock, Save, X, MoreVertical } from 'l
 import Button from '../components/Button';
 import Input from '../components/Input';
 import VideoCard from '../components/VideoCard'; 
+import { BASE_URL } from '../constants';
 
 function PlaylistDetail() {
     const { playlistId } = useParams();
@@ -35,7 +36,7 @@ function PlaylistDetail() {
     const fetchPlaylist = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/v1/playlist/${playlistId}`);
+            const response = await axios.get(`${BASE_URL}playlist/${playlistId}`);
             if (response.data.success) {
                 // Backend Bug Workaround: Data and Message arguments are swapped in ApiResponse
                 // 'data' might be the success message string, and 'message' contains the actual object
@@ -70,7 +71,7 @@ function PlaylistDetail() {
         setSaving(true);
         try {
             // 1. Update text details
-            const response = await axios.patch(`/api/v1/playlist/${playlistId}`, {
+            const response = await axios.patch(`${BASE_URL}playlist/${playlistId}`, {
                 name: editForm.name,
                 description: editForm.description
             });
@@ -78,7 +79,7 @@ function PlaylistDetail() {
             // 2. Update visibility if changed
             if (editForm.isPublic !== playlist.isPublic) {
                  // Endpoint toggles status without explicit value, so we only call if different
-                 await axios.patch(`/api/v1/playlist/toggle/public/${playlistId}`);
+                 await axios.patch(`${BASE_URL}playlist/toggle/public/${playlistId}`);
             }
 
             if (response.data.success) {
@@ -95,7 +96,7 @@ function PlaylistDetail() {
 
     const confirmDeletePlaylist = async () => {
         try {
-            await axios.delete(`/api/v1/playlist/${playlistId}`);
+            await axios.delete(`${BASE_URL}playlist/${playlistId}`);
             toast.success("Playlist deleted");
             navigate(`/c/${currentUser.username}`); // Redirect to profile
         } catch (error) {
@@ -107,7 +108,7 @@ function PlaylistDetail() {
     const confirmRemoveVideo = async () => {
         if (!videoToRemove) return;
         try {
-            await axios.patch(`/api/v1/playlist/remove/${videoToRemove}/${playlistId}`);
+            await axios.patch(`${BASE_URL}playlist/remove/${videoToRemove}/${playlistId}`);
             toast.success("Video removed");
             setVideoToRemove(null);
             setShowRemoveVideoModal(false);

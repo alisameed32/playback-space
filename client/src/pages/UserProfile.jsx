@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import VideoCard from '../components/VideoCard';
 // import { useForm } from 'react-hook-form'; // Can use for easier form handling
+import { BASE_URL } from '../constants';
 
 function UserProfile() {
     const { username } = useParams();
@@ -49,7 +50,7 @@ function UserProfile() {
     const fetchProfile = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/api/v1/users/c/${username}`);
+            const response = await axios.get(`${BASE_URL}users/c/${username}`);
             if (response.data.success) {
                 setProfile(response.data.data);
                 setEditForm({
@@ -68,7 +69,7 @@ function UserProfile() {
     const fetchPersonalDetails = async () => {
         if (!isOwner) return;
         try {
-            const response = await axios.get('/api/v1/users/me');
+            const response = await axios.get(`${BASE_URL}users/me`);
             if (response.data.success) {
                 setEditForm(prev => ({
                     ...prev,
@@ -108,18 +109,18 @@ function UserProfile() {
             let response;
             switch (activeTab) {
                 case 'videos':
-                    response = await axios.get(`/api/v1/videos?userId=${profile._id}`);
+                    response = await axios.get(`${BASE_URL}videos?userId=${profile._id}`);
                     if (response.data.success) setTabData(response.data.data.videos);
                     break;
                 case 'playlists':
-                    response = await axios.get(`/api/v1/playlist/user/${profile._id}`);
+                    response = await axios.get(`${BASE_URL}playlist/user/${profile._id}`);
                     // Backend bug workaround: data and message arguments swapped in controller
                     // Expected: data=playlists, message=string. Actual: data=string, message=playlists.
                     const list = Array.isArray(response.data.data) ? response.data.data : response.data.message;
                     if (response.data.success) setTabData(list || []);
                     break;
                 case 'tweets':
-                    response = await axios.get(`/api/v1/tweets/user/${profile._id}`);
+                    response = await axios.get(`${BASE_URL}tweets/user/${profile._id}`);
                     if (response.data.success) setTabData(response.data.data || []);
                     break;
                 default:
@@ -146,7 +147,7 @@ function UserProfile() {
 
         const toastId = toast.loading("Uploading avatar...");
         try {
-            const response = await axios.patch('/api/v1/users/update-avatar', formData, {
+            const response = await axios.patch(`${BASE_URL}users/update-avatar`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             
@@ -179,7 +180,7 @@ function UserProfile() {
 
         const toastId = toast.loading("Uploading cover image...");
         try {
-            const response = await axios.patch('/api/v1/users/update-cover-image', formData, {
+            const response = await axios.patch(`${BASE_URL}users/update-cover-image`, formData, {
                  headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -202,7 +203,7 @@ function UserProfile() {
 
     const handleSubscribe = async () => {
         try {
-            const response = await axios.post(`/api/v1/subscriptions/u/${profile._id}`);
+            const response = await axios.post(`${BASE_URL}subscriptions/u/${profile._id}`);
             if (response.data.success) {
                 setProfile(prev => ({
                     ...prev,
@@ -224,7 +225,7 @@ function UserProfile() {
         try {
             // 1. Update text details only
             if (editForm.fullName !== profile.fullName || editForm.email) {
-                 await axios.patch('/api/v1/users/update-profile', {
+                 await axios.patch(`${BASE_URL}users/update-profile`, {
                     fullName: editForm.fullName,
                     email: editForm.email
                  });
@@ -254,7 +255,7 @@ function UserProfile() {
         
         setCreatingPlaylist(true);
         try {
-            const response = await axios.post('/api/v1/playlist', createPlaylistForm);
+            const response = await axios.post(`${BASE_URL}playlist`, createPlaylistForm);
             if (response.data.success) {
                 toast.success("Playlist created successfully");
                 setShowPlaylistModal(false);
@@ -275,7 +276,7 @@ function UserProfile() {
         
         setCreatingTweet(true);
         try {
-            const response = await axios.post('/api/v1/tweets', { content: tweetContent });
+            const response = await axios.post(`${BASE_URL}tweets`, { content: tweetContent });
             if (response.data.success) {
                 toast.success("Tweet posted");
                 setTweetContent("");
@@ -292,7 +293,7 @@ function UserProfile() {
         if (!editTweetContent.trim()) return toast.error("Content cannot be empty");
         
         try {
-            const response = await axios.patch(`/api/v1/tweets/${tweetId}`, { content: editTweetContent });
+            const response = await axios.patch(`${BASE_URL}tweets/${tweetId}`, { content: editTweetContent });
             if (response.data.success) {
                 toast.success("Tweet updated");
                 setEditingTweetId(null);
@@ -309,7 +310,7 @@ function UserProfile() {
          if(!tweetToDelete) return;
 
          try {
-             const response = await axios.delete(`/api/v1/tweets/${tweetToDelete}`);
+             const response = await axios.delete(`${BASE_URL}tweets/${tweetToDelete}`);
              if (response.data.success) {
                  toast.success("Tweet deleted");
                  setTabData(prev => prev.filter(t => t._id !== tweetToDelete));

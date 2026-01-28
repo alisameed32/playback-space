@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Loader2, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../constants';
 
 function Subscriptions() {
     const [channels, setChannels] = useState([]);
@@ -23,7 +24,7 @@ function Subscriptions() {
 
              setLoading(true);
              try {
-                const response = await axios.get(`/api/v1/subscriptions/c/${user._id}`);
+                const response = await axios.get(`${BASE_URL}subscriptions/c/${user._id}`);
                 if (response.data.success) {
                     setChannels(response.data.data.channels || []);
                 }

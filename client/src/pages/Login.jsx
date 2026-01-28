@@ -6,6 +6,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import Logo from '../components/Logo'
+import { BASE_URL } from '../constants';
 
 function Login() {
     const navigate = useNavigate()
@@ -25,7 +26,7 @@ function Login() {
                 payload.username = data.usernameOrEmail
             }
 
-            const response = await axios.post('/api/v1/users/login', payload)
+            const response = await axios.post(`${BASE_URL}users/login`, payload)
             
             if (response.data.success) {
                 // Store auth details

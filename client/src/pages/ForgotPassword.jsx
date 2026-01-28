@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, Mail, Lock, KeyRound, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import { BASE_URL } from '../constants';
 
 function ForgotPassword() {
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ function ForgotPassword() {
     const onSubmitEmail = async (data) => {
         setLoading(true);
         try {
-            const res = await axios.post('/api/v1/users/forgot-password', { email: data.email });
+            const res = await axios.post(`${BASE_URL}users/forgot-password`, { email: data.email });
             if (res.data.success) {
                 toast.success("Verification code sent to your email");
                 setEmail(data.email);
@@ -45,7 +46,7 @@ function ForgotPassword() {
         setLoading(true);
         try {
             // Verify OTP ONLY
-            const res = await axios.post('/api/v1/users/verify-otp', { email, otp: data.otp });
+            const res = await axios.post(`${BASE_URL}users/verify-otp`, { email, otp: data.otp });
              if (res.data.success) {
                 toast.success("Code verified successfully");
                 setOtp(data.otp);
@@ -68,7 +69,7 @@ function ForgotPassword() {
         
         setLoading(true);
         try {
-            const res = await axios.post('/api/v1/users/reset-password', {
+            const res = await axios.post(`${BASE_URL}users/reset-password`, {
                 email,
                 otp, // Use the verified OTP from state
                 newPassword: data.newPassword

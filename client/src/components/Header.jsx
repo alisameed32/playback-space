@@ -6,6 +6,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Logo from './Logo';
 import Button from './Button';
+import { BASE_URL } from '../constants';
 
 function Header({ toggleSidebar, isOpen }) {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ function Header({ toggleSidebar, isOpen }) {
 
   const handleLogout = async () => {
     try {
-        await axios.post('/api/v1/users/logout');
+        await axios.post(`${BASE_URL}users/logout`);
         localStorage.removeItem("user");
         toast.success("Logged out successfully");
         navigate('/login');
