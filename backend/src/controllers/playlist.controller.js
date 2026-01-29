@@ -40,19 +40,17 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid user ID");
   }
 
-  if (userId !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "Forbidden: Access to the requested resource is denied"
-    );
-  }
+  const isOwner = req.user?._id.toString() === userId;
+
+  const matchCondition = {
+    owner: new mongoose.Types.ObjectId(userId),
+    ...(isOwner ? {} : { isPublic: true }),
+  };
 
   const playlists = await Playlist.aggregate([
     // stage
     {
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId),
-      },
+      $match: matchCondition,
     },
     // stage 2: lookup videos
     {
@@ -111,7 +109,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "User playlists fetched successfully", playlists)
+      new ApiResponse(200, playlists, "User playlists fetched successfully")
     );
 });
 
@@ -231,6 +229,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         videos: 1,
         owner: 1,
         totalVideos: 1,
+        createdAt: 1,
         updatedAt: 1,
         isPublic: 1,
       },
@@ -253,6 +252,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         videos: playlist.videos,
         owner: playlist.owner,
         isPublic: playlist.isPublic,
+        createdAt: playlist.createdAt,
         updatedAt: playlist.updatedAt,
       },
       pagination: {

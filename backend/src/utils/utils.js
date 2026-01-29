@@ -193,6 +193,7 @@ export const getCommentsForEntity = async ({
                   $project: {
                     username: 1,
                     avatar: 1,
+                    fullName: 1,
                   },
                 },
               ],

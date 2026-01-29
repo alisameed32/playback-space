@@ -13,11 +13,19 @@ import {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 } from "../controllers/user.controller.js";
 
 const router = Router();
 
 // ================ public routes ================
+
+router.route("/forgot-password").post(forgotPassword);
+router.route("/verify-otp").post(verifyOtp);
+router.route("/reset-password").post(resetPassword);
 
 router.route("/register").post(
   upload.fields([
@@ -42,6 +50,7 @@ router.route("/refresh-access-token").get(refreshAccessToken);
 
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/change-password").post(verifyJWT, changePassword);
+router.route("/delete-account").delete(verifyJWT, deleteUser);
 
 // --- Current User Profile Management ---
 

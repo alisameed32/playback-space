@@ -9,6 +9,8 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 import { OPTIONS } from "../constants.js";
 import mongoose from "mongoose";
+import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -522,6 +524,117 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+// =======================================
+// Delete User Account
+// =======================================
+const deleteUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndDelete(req.user._id);
+  
+  const options = {
+      httpOnly: true,
+      secure: true
+  };
+
+  return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new ApiResponse(200, {}, "User account deleted successfully"));
+});
+
+
+// =======================================
+// Forgot Password
+// =======================================
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const user = await User.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+
+  // Generate OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Hash OTP and save
+  const resetToken = crypto.createHash("sha256").update(otp).digest("hex");
+
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  await user.save({ validateBeforeSave: false });
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Playback Space Password Recovery",
+      otp, 
+    });
+
+    res.status(200).json(new ApiResponse(200, {}, `Email sent to ${user.email}`));
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(500, "Email could not be sent. Please check your SMTP configuration.");
+  }
+});
+
+// =======================================
+// Reset Password
+// =======================================
+const verifyOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, "Email and OTP are required");
+  }
+
+  // Hash the provided OTP to compare
+  const resetToken = crypto.createHash("sha256").update(otp).digest("hex");
+
+  const user = await User.findOne({
+    email,
+    resetPasswordToken: resetToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired Verification Code");
+  }
+
+  res.status(200).json(new ApiResponse(200, {}, "OTP verified successfully"));
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  
+  if (!email || !otp || !newPassword) {
+      throw new ApiError(400, "All fields are required");
+  }
+
+  // Hash the provided OTP to compare
+  const resetToken = crypto.createHash("sha256").update(otp).digest("hex");
+
+  const user = await User.findOne({
+    email,
+    resetPasswordToken: resetToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired Verification Code");
+  }
+
+  user.password = newPassword; 
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -534,4 +647,9 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };
+
