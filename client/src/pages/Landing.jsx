@@ -8,6 +8,8 @@ const features = [
   { icon: Upload, title: "Creators First", desc: "Advanced studio tools to manage, analyze, and monetize your content." },
   { icon: Users, title: "Community Driven", desc: "Engage with fans through real-time comments and community posts." },
   { icon: Shield, title: "Secure & Private", desc: "Enterprise-grade encryption keeps your data and content safe." },
+  { icon: Zap, title: "Lightning Fast", desc: "Optimized for speed with global CDN points ensuring low latency anywhere." },
+  { icon: Video, title: "Live Events", desc: "Host and participate in live streaming events with massive audiences." },
 ];
 
 const plans = [
@@ -79,7 +81,7 @@ const Landing = () => {
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 bg-black/50 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 group">
              <div className="bg-gradient-to-tr from-purple-600 to-blue-500 p-1.5 rounded-lg group-hover:rotate-12 transition-transform">
                 <Play fill="white" size={20} className="relative left-[1px]" />
              </div>
@@ -287,7 +289,7 @@ const Landing = () => {
       </section>
 
       {/* Tech Stack / About Section */}
-      <section className="py-24 bg-zinc-900/30 border-y border-white/5">
+      <section id="features" className="py-24 bg-zinc-900/30 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div>
