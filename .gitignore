@@ -133,3 +133,64 @@ thumb
 sketch
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node,react
+
+# Ignore the terraform state files and related files
+
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform/
+.terraform.lock.hcl
+
+# Terraform plan files
+*.plan
+
+# Sensitive files
+secret.tfvars
+*.pem
+*.key
+*.crt
+
+# Local environment settings
+*.tf.local
+*.tf.json
+
+# Backup files
+*.bak
+*.backup
+*.swp
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.vscode/
+.idea/
+*.iml
+
+# JetBrains IDEs
+*.iws
+*.ipr
+*.idea/
+
+# Python virtual environment (if using scripts with Terraform)
+venv/
+__pycache__/
+
+# Node modules (if using Node.js scripts with Terraform)
+node_modules/
+
+# Others
+.terraformrc
+terraform.rc
