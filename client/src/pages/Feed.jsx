@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import VideoCard from '../components/VideoCard';
 import { Loader2 } from 'lucide-react';
 import{ BASE_URL } from '../constants';
@@ -10,6 +10,7 @@ function Feed() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const query = searchParams.get('query') || "";
 
     useEffect(() => {
@@ -28,7 +29,8 @@ function Feed() {
                  // If 401, it means user is restricted (due to global verifyJWT on route)
                  // But for a Home page, filtering empty or showing "Please login" is better handled in UI
                  if (err.response?.status === 401 || err.response?.status === 403) {
-                     setError("Please log in to view videos.");
+                     localStorage.removeItem("user");
+                     navigate('/');
                  } else {
                      setError("Failed to load videos.");
                  }

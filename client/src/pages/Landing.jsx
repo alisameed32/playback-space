@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Upload, Users, Shield, Github, Linkedin, Instagram, Facebook, ChevronDown, MonitorPlay, Zap, X, Check, ArrowRight, Video } from 'lucide-react';
 
@@ -64,6 +64,15 @@ const itemVariants = {
 };
 
 const Landing = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+      const user = localStorage.getItem("user");
+      if (user) {
+          navigate('/feed');
+      }
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-purple-500 selection:text-white font-sans overflow-x-hidden">
       
@@ -124,6 +133,10 @@ const Landing = () => {
                     <Link to="/login" className="px-8 py-4 bg-white/5 border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-sm">
                         Creator Studio
                     </Link>
+                    <a href="https://github.com/alisameed32/playback-space" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-white/5 border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-sm flex items-center gap-2">
+                        <Github size={20} />
+                        <span>Source Code</span>
+                    </a>
                 </motion.div>
             </motion.div>
 
@@ -363,7 +376,7 @@ const Landing = () => {
                 <div>
                     <h4 className="font-bold mb-6 text-white">Platform</h4>
                     <ul className="space-y-4 text-gray-400 text-sm">
-                        <li><Link to="/feed" className="hover:text-purple-500 transition">Browse Content</Link></li>
+                        <li><Link to="/login" className="hover:text-purple-500 transition">Browse Content</Link></li>
                         <li><Link to="/login" className="hover:text-purple-500 transition">Creator Studio</Link></li>
                         <li><Link to="/signup" className="hover:text-purple-500 transition">Sign Up</Link></li>
                     </ul>
