@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deployment
+  namespace: playback-space
+  labels:
+    app: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      name: client
+      labels:
+        app: client
+    spec:
+      containers:
+        - name: client
+          image: alisameed/playback-space-client-beta:v2.2
+
+          # 👇 THIS IS THE ENV BLOCK YOU NEED
+          env:
+            - name: VITE_API_URL
+              # IMPORTANT: 
+              # 1. Replace with your EC2 Public IP
+              # 2. Use Port 31100 (Your Backend NodePort)
+              # 3. Keep the /api/v1/ path
+              value: "http://13.218.175.123:31100/api/v1/"
+
+          ports:
+            - containerPort: 5173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-service
+  namespace: playback-space
+spec:
+  type: NodePort
+  selector:
+    app: client
+  ports:
+    - port: 5173
+      targetPort: 5173
+      protocol: TCP
+      nodePort: 31000

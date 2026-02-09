@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: playback-space
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      name: backend
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: alisameed/playback-space-backend-beta:v2.1
+          
+          # 1. LOAD ALL SECRETS (Simple & Clean)
+          # This assumes your Secret keys match your code's variable names exactly
+          # (e.g., MONGODB_URI, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET)
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+
+          # 2. SPECIFIC CONFIGURATION
+          env:
+            - name: PORT
+              value: "8000"
+
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: playback-space
+spec:
+  type: NodePort
+  selector:
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      nodePort: 31100
