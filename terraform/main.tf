@@ -23,6 +23,7 @@ module "sg" {
   vpc_id            = module.vpc.vpc_id
   allowed_ssh_cidr  = var.my_ip
   allowed_http_cidr = ["0.0.0.0/0"]
+  admin_ports       = var.admin_ports
 }
 
 module "ec2" {

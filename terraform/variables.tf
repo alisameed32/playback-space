@@ -10,4 +10,8 @@ variable "instance_names" {
   type        = list(string)
   description = "List of names for the EC2 instances"
 }
+variable "admin_ports" {
+  type        = list(number)
+  description = "List of admin ports"
+}
 
