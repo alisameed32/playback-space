@@ -48,6 +48,7 @@ pipeline {
         stage("OWASP: Dependency check"){
             steps{
                 script{
+                    sh "rm -rf ~/.dependency-check"
                     owasp_dependency()
                 }
             }
