@@ -1,0 +1,89 @@
+# ===============================
+# Dependency directories
+# ===============================
+node_modules
+**/node_modules
+
+# Package manager caches
+.npm
+.npmrc
+.yarn
+.yarnrc
+.yarn-cache
+.pnpm-store
+
+# ===============================
+# Logs & debug files
+# ===============================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# ===============================
+# Environment & secrets
+# ===============================
+.env
+.env.*
+!.env.example
+
+# ===============================
+# Git & VCS
+# ===============================
+.git
+.gitignore
+.gitattributes
+
+# ===============================
+# OS / Editor files
+# ===============================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+.vscode
+.idea
+*.swp
+*.swo
+*.tmp
+
+# ===============================
+# Build artifacts (frontend)
+# ===============================
+client/build
+client/dist
+build
+dist
+
+# ===============================
+# Local database & uploads
+# ===============================
+data
+mongo-data
+uploads
+tmp
+
+# ===============================
+# Docker & CI files not needed in image
+# ===============================
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile.dev
+Dockerfile.local
+.github
+.gitlab
+.gitlab-ci.yml
+
+# ===============================
+# Documentation
+# ===============================
+README.md
+CHANGELOG.md
+docs
+
+# ===============================
+# Optional: ignore everything else (strict mode)
+# ===============================
+# *
