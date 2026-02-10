@@ -59,7 +59,9 @@ pipeline {
                     withCredentials([gitUsernamePassword(credentialsId: 'Github-cred', gitToolName: 'Default')]) {
                         sh '''
                         echo "Checking repository status: "
-                        
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@company.com"
+
                         git status
                     
                         echo "Adding changes to git: "
