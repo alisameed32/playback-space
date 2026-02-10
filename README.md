@@ -1,6 +1,7 @@
 # PlaybackSpace 🎥
 
-**[INSERT YOUR PROJECT DEMO VIDEO HERE]**
+[![PlaybackSpace Demo](/assets/UI_1.png)](https://www.youtube.com/watch?v=018ZpQAmcx8)
+
 
 **A production-grade, DevOps-heavy Video Distribution Platform built on the MERN Stack.**
 
