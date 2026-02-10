@@ -1,0 +1,24 @@
+Jenkinsfile       linguist-language=Groovy
+*.jenkinsfile     linguist-language=Groovy
+*.sh              linguist-language=Shell
+*.bash            linguist-language=Shell
+
+Dockerfile        linguist-language=Dockerfile
+*.dockerfile      linguist-language=Dockerfile
+docker-compose.yml linguist-language=YAML
+
+*.yaml            linguist-language=YAML
+*.yml             linguist-language=YAML
+*.tf              linguist-language=HCL
+*.tfvars          linguist-language=HCL
+
+
+# Use **/ to explicitly target deeply nested lock files
+**/package-lock.json  linguist-generated
+**/yarn.lock          linguist-generated
+
+# Vendor ALL JSONs (Configuration files add up!)
+*.json                linguist-vendored
+
+
+client/** linguist-vendored
