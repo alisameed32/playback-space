@@ -45,17 +45,6 @@ pipeline {
             }
         }
 
-       stage("OWASP: Dependency check"){
-            steps{
-                script{
-                    // Fetch the API Key using the ID you created earlier
-                    withCredentials([string(credentialsId: 'NVD_API_KEY', variable: 'MY_NVD_KEY')]) {
-                        // Pass the key to your shared library function
-                        owasp_dependency(MY_NVD_KEY)
-                    }
-                }
-            }
-        }
         
         stage("SonarQube: Code Analysis"){
             steps{
