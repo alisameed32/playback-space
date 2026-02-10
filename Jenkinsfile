@@ -87,7 +87,7 @@ pipeline {
     }
     post{
         success{
-            archiveArtifacts artifacts: '*.xml', followSymlinks: false
+            //archiveArtifacts artifacts: '*.xml', followSymlinks: false
             build job: "playback-space-CD", parameters: [
                 string(name: 'CLIENT_DOCKER_TAG', value: "${params.CLIENT_DOCKER_TAG}"),
                 string(name: 'BACKEND_DOCKER_TAG', value: "${params.BACKEND_DOCKER_TAG}")
