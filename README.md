@@ -205,4 +205,4 @@ All API endpoints are accessible under the `/api/v1` prefix.
 
 ### 👤 Author
 **Ali Sameed**
-[LinkedIn](https://github.com/alisameed32) | [GitHub](https://www.linkedin.com/in/alisameed/)
+[LinkedIn](https://www.linkedin.com/in/alisameed/) | [GitHub](https://github.com/alisameed32)
