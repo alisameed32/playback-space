@@ -24,3 +24,7 @@ connectDB()
   .catch((err) => {
     console.log("⚠️ Error connecting to the database", err);
   });
+
+
+// 👇 ADD THIS LINE for Vercel support
+export default app;
