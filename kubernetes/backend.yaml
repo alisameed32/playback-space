@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: alisameed/playback-space-backend-beta:v2.1
+          image: alisameed/playback-space-backend-beta:v3.3
           
           # 1. LOAD ALL SECRETS (Simple & Clean)
           # This assumes your Secret keys match your code's variable names exactly

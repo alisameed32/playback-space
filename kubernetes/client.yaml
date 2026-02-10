@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: alisameed/playback-space-client-beta:v2.2
+          image: alisameed/playback-space-client-beta:v3.2
 
           # 👇 THIS IS THE ENV BLOCK YOU NEED
           env:
