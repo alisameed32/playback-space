@@ -5,6 +5,8 @@
 ▶️ **Watch Demo (opens in new tab):**  
 https://www.youtube.com/watch?v=018ZpQAmcx8
 
+🌐 **Live Website:** [playbackspace.dev](https://playbackspace.dev)
+
 **A production-grade, DevOps-heavy Video Distribution Platform built on the MERN Stack.**
 
 **PlaybackSpace** is a high-performance media application designed to simulate a modern streaming environment (like YouTube). Users can upload content, build communities through tweets and playlists, and track their engagement via analytics.
@@ -18,6 +20,7 @@ Unlike standard web apps, **PlaybackSpace is built on a "DevOps-First" architect
 - Folder Structure
 - User Interface (UI)
 - Infrastructure & Pipeline
+- Future Enhancements
 - Getting Started
 - API Endpoints
 
@@ -159,6 +162,20 @@ ArgoCD Sync
 
 ![](/assets/Email%20Alert.png)
 
+## 🚀 Future Enhancements
+
+Active development is focused on integrating Generative AI to automate content creation and engagement.
+
+### 🤖 AI-Powered Chatbot & Engagement
+
+* An intelligent chatbot capable of interacting with users and auto-generating context-aware comments on tweets and videos to boost community engagement.
+
+### 🎥 Generative AI Video Studio ("Publish with AI")
+
+A dedicated dashboard panel allowing users to generate full video content from a single text prompt.
+
+* **Automated Asset Generation**: The AI creates the video, a relevant thumbnail, and an SEO-optimized description.
+* **Human-in-the-loop Validation**: A built-in review workflow where users must validate and approve the generated assets before the content is published.
 
 ## ⚡ Getting Started
 
